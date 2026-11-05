@@ -61,7 +61,7 @@ export default async function TrekPage(props) {
     const g = trekGroups[groupKey];
     return (
       <>
-        <PageHero title={g.title} crumb={`Treks / ${g.title}`} subtitle={g.blurb} />
+        <PageHero title={g.title} crumb={`Treks / ${g.title}`} subtitle={g.blurb} fullHeight />
         <TrekGrid treks={items} eyebrow={g.title} title={g.title} subtitle={g.blurb} />
       </>
     );

@@ -8,7 +8,7 @@ export default function TrekGrid({ eyebrow, title, subtitle, treks, viewAllHref,
     <section className="section wow animate fadeInUp" data-wow-delay="200ms" data-wow-duration="1500ms">
       <div className="container-px">
         <SectionHeading eyebrow={eyebrow} title={title} subtitle={subtitle} />
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {treks.map((t) => (
             <TrekCard key={t.slug} trek={t} />
           ))}
