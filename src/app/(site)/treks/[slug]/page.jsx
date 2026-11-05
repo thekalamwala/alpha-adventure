@@ -70,7 +70,7 @@ export default async function TrekPage(props) {
     const weekend = (await getListingTreks()).filter((t) => t.tags?.some((tag) => WEEKEND_TAGS.includes(tag)));
     return (
       <>
-        <PageHero title="Weekend Treks" crumb="Treks / Weekend Treks" subtitle="Quick, beginner-friendly escapes for a perfect weekend." />
+        <PageHero title="Weekend Treks" crumb="Treks / Weekend Treks" subtitle="Quick, beginner-friendly escapes for a perfect weekend." fullHeight />
         <TrekGrid treks={weekend} eyebrow="Weekend" title="Weekend Friendly Treks" />
       </>
     );
