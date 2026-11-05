@@ -138,9 +138,12 @@ function PricingCard({ title, data, bookHref, whatsapp, singlePrice, basePrice }
 // Trip Cost card (full-width). Looks up data by slug; renders nothing when the
 // requested card has no data for the trek.
 export function RoutePricingCard({ slug, bookHref, variant = "trek", basePrice }) {
-  const data =
+  let data =
     variant === "tour" ? tourTripCostBySlug[slug] : variant === "trip" ? tripCostBySlug[slug] : trekCostBySlug[slug];
   const title = variant === "tour" ? "Trip Cost" : variant === "trip" ? "Trip Cost" : "Trek Cost";
+  // Trek sidebar: always show a price card from base_price, even for treks with no
+  // route-pricing entry (e.g. newly added treks like "eureka").
+  if (!data && variant === "trek" && basePrice != null) data = { rows: [], notes: [] };
   if (!data) return null;
   // Tour packages enquire over WhatsApp (mirrors the tour sidebar's
   // "Book / Enquire" button); trek/trip cards keep linking to the booking flow.
