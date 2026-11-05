@@ -1845,6 +1845,20 @@ body.tt-magic-cursor #magic-cursor {
   color: var(--white-color);
 }
 
+/* Single-span buttons (corporate/student pages) lost their label on hover: the
+   slide-out animation assumes a duplicated second span, so the lone label slid
+   away leaving the dark hover background with no visible text. Keep a lone label
+   in place and above the ::after overlay so it stays white on hover. */
+.primary-btn1 > span:only-child {
+  position: relative;
+  z-index: 2;
+}
+
+.primary-btn1:hover > span:only-child {
+  transform: none;
+  opacity: 1;
+}
+
 .primary-btn1:hover .arrow {
   fill: rgba(255, 255, 255, 0.15);
 }
