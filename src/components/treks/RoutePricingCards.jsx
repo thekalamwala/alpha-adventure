@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { site } from "@/data/site";
 import { trekCostBySlug, tripCostBySlug, tourTripCostBySlug } from "@/data/route-pricing";
+import ImportantNoteButton from "./ImportantNoteButton";
 
 const phoneHref = site.phone ? `tel:${site.phone.replace(/[^+\d]/g, "")}` : null;
 
@@ -102,14 +103,19 @@ function PricingCard({ title, data, bookHref, whatsapp, singlePrice }) {
         </Link>
       )}
 
-      <div className="mt-6 min-h-[150px] flex-1">
-        <h4 className="mb-2 text-sm font-bold text-ink">Note:</h4>
-        <ol className="list-decimal space-y-1.5 pl-5 text-sm leading-relaxed text-gray-600">
-          {data.notes.map((n) => (
-            <li key={n}>{n}</li>
-          ))}
-        </ol>
-      </div>
+      {singlePrice ? (
+        // Compact sidebar: notes behind an "Important Note" button → modal.
+        <ImportantNoteButton notes={data.notes} />
+      ) : (
+        <div className="mt-6 min-h-[150px] flex-1">
+          <h4 className="mb-2 text-sm font-bold text-ink">Note:</h4>
+          <ol className="list-decimal space-y-1.5 pl-5 text-sm leading-relaxed text-gray-600">
+            {data.notes.map((n) => (
+              <li key={n}>{n}</li>
+            ))}
+          </ol>
+        </div>
+      )}
 
       {phoneHref && (
         <a
