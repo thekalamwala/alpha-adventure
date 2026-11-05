@@ -57,16 +57,26 @@ function PricingTable({ rows }) {
   );
 }
 
-function PricingCard({ title, data, bookHref, whatsapp }) {
+function PricingCard({ title, data, bookHref, whatsapp, singlePrice }) {
   if (!data) return null;
+  // Sidebar (singlePrice): show one headline price like the original design, not
+  // the full Pickup-Drop table. Price = the base (first) row.
+  const headline = data.rows?.[0]?.price;
   return (
     <div className="flex h-full flex-col rounded-xl2 border border-line/70 bg-white p-6 shadow-soft sm:p-8">
       <h3 className="text-2xl font-extrabold text-ink">{title}</h3>
       <p className="mb-5 text-sm font-medium text-gray-500">including GST</p>
 
-      <div className="min-h-[220px]">
-        <PricingTable rows={data.rows} />
-      </div>
+      {singlePrice ? (
+        <div className="rounded-xl2 border border-line/70 bg-page/50 p-6 text-center">
+          <div className="text-4xl font-extrabold text-primary">{headline}</div>
+          <div className="mt-1 text-sm text-gray-500">per person</div>
+        </div>
+      ) : (
+        <div className="min-h-[220px]">
+          <PricingTable rows={data.rows} />
+        </div>
+      )}
 
       {whatsapp ? (
         <a
@@ -125,7 +135,9 @@ export function RoutePricingCard({ slug, bookHref, variant = "trek" }) {
   // Tour packages enquire over WhatsApp (mirrors the tour sidebar's
   // "Book / Enquire" button); trek/trip cards keep linking to the booking flow.
   const whatsapp = variant === "tour" ? site.whatsapp : null;
-  return <PricingCard title={title} data={data} bookHref={bookHref} whatsapp={whatsapp} />;
+  // The trek sidebar shows a single headline price (original design); the
+  // full-width trip/tour cards keep the detailed route table.
+  return <PricingCard title={title} data={data} bookHref={bookHref} whatsapp={whatsapp} singlePrice={variant === "trek"} />;
 }
 
 export default function RoutePricingCards({ slug, bookHref }) {
