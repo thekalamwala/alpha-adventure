@@ -58,11 +58,12 @@ function PricingTable({ rows }) {
   );
 }
 
-function PricingCard({ title, data, bookHref, whatsapp, singlePrice }) {
+function PricingCard({ title, data, bookHref, whatsapp, singlePrice, basePrice }) {
   if (!data) return null;
-  // Sidebar (singlePrice): show one headline price like the original design, not
-  // the full Pickup-Drop table. Price = the base (first) row.
-  const headline = data.rows?.[0]?.price;
+  // Sidebar (singlePrice): show one headline price, sourced from the trek's
+  // base_price (same field the listing + booking use) so the detail price can't
+  // diverge from what the customer pays. Falls back to the route table's first row.
+  const headline = basePrice != null ? rupees(basePrice) : data.rows?.[0]?.price;
   return (
     <div className="flex h-full flex-col rounded-xl2 border border-line/70 bg-white p-6 shadow-soft sm:p-8">
       <h3 className="text-2xl font-extrabold text-ink">{title}</h3>
@@ -133,7 +134,7 @@ function PricingCard({ title, data, bookHref, whatsapp, singlePrice }) {
 // renders just the Trek Cost card (sidebar); `variant="trip"` renders just the
 // Trip Cost card (full-width). Looks up data by slug; renders nothing when the
 // requested card has no data for the trek.
-export function RoutePricingCard({ slug, bookHref, variant = "trek" }) {
+export function RoutePricingCard({ slug, bookHref, variant = "trek", basePrice }) {
   const data =
     variant === "tour" ? tourTripCostBySlug[slug] : variant === "trip" ? tripCostBySlug[slug] : trekCostBySlug[slug];
   const title = variant === "tour" ? "Trip Cost" : variant === "trip" ? "Trip Cost" : "Trek Cost";
@@ -143,7 +144,7 @@ export function RoutePricingCard({ slug, bookHref, variant = "trek" }) {
   const whatsapp = variant === "tour" ? site.whatsapp : null;
   // The trek sidebar shows a single headline price (original design); the
   // full-width trip/tour cards keep the detailed route table.
-  return <PricingCard title={title} data={data} bookHref={bookHref} whatsapp={whatsapp} singlePrice={variant === "trek"} />;
+  return <PricingCard title={title} data={data} bookHref={bookHref} whatsapp={whatsapp} singlePrice={variant === "trek"} basePrice={basePrice} />;
 }
 
 export default function RoutePricingCards({ slug, bookHref }) {
