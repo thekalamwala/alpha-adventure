@@ -16,17 +16,22 @@ export default async function UserDashboardPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login?next=/user-dashboard");
 
-  // RLS scopes both to this user.
-  const [{ data: bookings }, { data: profile }] = await Promise.all([
+  // RLS scopes all three to this user (reviews via the author-read-own policy).
+  const [{ data: bookings }, { data: profile }, { data: myReviews }] = await Promise.all([
     supabase
       .from("bookings")
-      .select("id,reference,trek_title,departure_date,status,adults,children,grand_total,amount_paid,created_at")
+      .select("id,reference,trek_title,departure_date,status,adults,children,grand_total,amount_paid,balance_due,balance_due_date,trek_id,created_at")
       .order("created_at", { ascending: false }),
     supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
+    supabase.from("reviews").select("booking_id,rating,title,body,status"),
   ]);
 
   const rows = bookings ?? [];
   const today = istToday();
+  // booking_id -> the customer's review, so the dashboard shows status + "Edit".
+  const reviewsByBooking = Object.fromEntries(
+    (myReviews ?? []).map((r) => [r.booking_id, { rating: r.rating, title: r.title ?? "", body: r.body ?? "", status: r.status }]),
+  );
   const stats = {
     total: rows.length,
     upcoming: rows.filter((b) => PAID.has(b.status) && (b.departure_date ?? "") >= today).length,
@@ -44,6 +49,8 @@ export default async function UserDashboardPage() {
       bookings={rows}
       payments={payments}
       stats={stats}
+      reviewsByBooking={reviewsByBooking}
+      today={today}
       emailVerified={profile?.email_verified ?? false}
     />
   );

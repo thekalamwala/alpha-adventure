@@ -5,10 +5,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   LayoutDashboard, Ticket, CreditCard, User, LogOut, Mountain,
-  CalendarCheck, Wallet, ChevronRight, X,
+  CalendarCheck, Wallet, ChevronRight, X, Star,
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { updateProfile, getBookingTravellers, cancelBooking } from "./actions";
+import { submitReview } from "./reviewActions";
+import { reviewStatusLabel } from "@/domain/review/review";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
@@ -49,17 +51,29 @@ const NAV = [
   ] },
 ];
 
-type Booking = { id: string; reference: string; trek_title: string | null; departure_date: string | null; status: string; adults: number | null; children: number | null; grand_total: number | null; created_at: string };
+type Booking = { id: string; reference: string; trek_title: string | null; departure_date: string | null; status: string; adults: number | null; children: number | null; grand_total: number | null; balance_due?: number | null; balance_due_date?: string | null; trek_id?: string | null; created_at: string };
+type ReviewEntry = { rating: number; title: string; body: string; status: string };
 type Props = {
   email?: string;
   profile: Record<string, any>;
   bookings: Booking[];
   payments: { id: string; date: string; reference: string; amount: number | null; status: string }[];
   stats: { total: number; upcoming: number; spent: number };
+  reviewsByBooking?: Record<string, ReviewEntry>;
+  today?: string;
   emailVerified?: boolean;
 };
 
-export default function Dashboard({ email, profile, bookings, payments, stats, emailVerified = true }: Props) {
+// A booking can be reviewed once the trip is over. Ownership is already guaranteed
+// (bookings are RLS-scoped to this user); the server action re-checks regardless.
+const PAID_FOR_REVIEW = new Set(["confirmed", "deposit_paid", "completed"]);
+function canReview(b: Booking, today: string): boolean {
+  if (b.status === "completed") return true;
+  if (!PAID_FOR_REVIEW.has(b.status)) return false;
+  return !!b.departure_date && b.departure_date < today;
+}
+
+export default function Dashboard({ email, profile, bookings, payments, stats, reviewsByBooking = {}, today = "", emailVerified = true }: Props) {
   const router = useRouter();
   const [tab, setTab] = useState("overview");
   const [detail, setDetail] = useState<Booking | null>(null);
@@ -143,7 +157,15 @@ export default function Dashboard({ email, profile, bookings, payments, stats, e
         </main>
       </div>
 
-      {detail && <BookingDetail booking={detail} onClose={() => setDetail(null)} />}
+      {detail && (
+        <BookingDetail
+          booking={detail}
+          existing={reviewsByBooking[detail.id]}
+          canReview={canReview(detail, today)}
+          onClose={() => setDetail(null)}
+          onSaved={() => router.refresh()}
+        />
+      )}
     </div>
   );
 }
@@ -320,11 +342,12 @@ function ProfileForm({ email, profile }: { email?: string; profile: Record<strin
   );
 }
 
-function BookingDetail({ booking, onClose }: { booking: Booking; onClose: () => void }) {
+function BookingDetail({ booking, existing, canReview, onClose, onSaved }: { booking: Booking; existing?: ReviewEntry; canReview: boolean; onClose: () => void; onSaved: () => void }) {
   const [travellers, setTravellers] = useState<any[] | null>(null);
   const [travErr, setTravErr] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [reviewOpen, setReviewOpen] = useState(false);
 
   useEffect(() => {
     let live = true; // ignore a late response after close / switching booking
@@ -388,6 +411,31 @@ function BookingDetail({ booking, onClose }: { booking: Booking; onClose: () => 
               </ul>}
         </div>
 
+        {/* Pay balance — only a deposit booking has an outstanding balance. */}
+        {booking.status === "deposit_paid" && (booking.balance_due ?? 0) > 0 && (
+          <div className="mt-4 rounded-xl2 border border-amber-200 bg-amber-50 p-4">
+            <div className="text-sm text-amber-800">
+              Balance due: <strong>{rupees(booking.balance_due)}</strong>
+              {booking.balance_due_date && <> by {fmtDate(booking.balance_due_date)}</>}
+            </div>
+            <Link href={`/pay-balance/${booking.reference}`}>
+              <Button size="sm" className="mt-2">Pay balance {rupees(booking.balance_due)}</Button>
+            </Link>
+          </div>
+        )}
+
+        {/* Review — once the trip is over. */}
+        {canReview && (
+          <div className="mt-4 flex items-center gap-3">
+            <Button variant="secondary" size="sm" onClick={() => setReviewOpen(true)}>
+              <Star size={16} /> {existing ? "Edit review" : "Write a review"}
+            </Button>
+            {existing && (
+              <span className="text-xs text-gray-500">Your review: <strong>{reviewStatusLabel(existing.status)}</strong></span>
+            )}
+          </div>
+        )}
+
         {err && <div className="mt-4 rounded-lg bg-red-50 px-4 py-2.5 text-sm text-red-600">{err}</div>}
 
         <div className="mt-6 flex gap-3">
@@ -396,7 +444,78 @@ function BookingDetail({ booking, onClose }: { booking: Booking; onClose: () => 
             <Button variant="danger" className="flex-1" disabled={busy} onClick={onCancel}>{busy ? "Cancelling…" : "Cancel booking"}</Button>
           )}
         </div>
+
+        {reviewOpen && (
+          <ReviewModal
+            booking={booking}
+            existing={existing}
+            onClose={() => setReviewOpen(false)}
+            onSaved={() => { setReviewOpen(false); onSaved(); }}
+          />
+        )}
       </div>
+    </div>
+  );
+}
+
+function ReviewModal({ booking, existing, onClose, onSaved }: { booking: Booking; existing?: ReviewEntry; onClose: () => void; onSaved: () => void }) {
+  const [rating, setRating] = useState(existing?.rating ?? 5);
+  const [title, setTitle] = useState(existing?.title ?? "");
+  const [body, setBody] = useState(existing?.body ?? "");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setBusy(true); setMsg(null);
+    try {
+      const r = await submitReview(booking.id, { rating, title, body });
+      if (r.ok) { setMsg({ ok: true, text: "Thanks! Your review is pending approval." }); setTimeout(onSaved, 900); }
+      else setMsg({ ok: false, text: r.error });
+    } catch {
+      setMsg({ ok: false, text: "Network problem. Please try again." });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[70] flex items-end justify-center bg-ink/50 p-0 sm:items-center sm:p-4" onClick={onClose}>
+      <form onSubmit={onSubmit} className="w-full max-w-md rounded-t-2xl bg-white p-6 shadow-card sm:rounded-2xl" onClick={(e) => e.stopPropagation()} aria-label="Write a review">
+        <div className="mb-4 flex items-start justify-between">
+          <h2 className="text-lg font-bold text-ink">{existing ? "Edit your review" : "Write a review"}</h2>
+          <button type="button" onClick={onClose} className="rounded-lg p-1 text-gray-400 hover:bg-slate-100"><X size={20} /></button>
+        </div>
+        <div className="mb-1 text-sm text-gray-500">{booking.trek_title ?? "Trek"}</div>
+
+        <div className="mb-4">
+          <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-400">Rating</span>
+          <div className="flex gap-1" role="radiogroup" aria-label="Rating">
+            {[1, 2, 3, 4, 5].map((n) => (
+              <button key={n} type="button" role="radio" aria-checked={rating === n} aria-label={`${n} star${n > 1 ? "s" : ""}`}
+                onClick={() => setRating(n)} className="p-0.5 text-2xl text-amber-500">
+                {n <= rating ? "★" : "☆"}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <label className="mb-3 block">
+          <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-400">Title</span>
+          <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={160} required className={inputCls} placeholder="Sum it up" />
+        </label>
+        <label className="mb-4 block">
+          <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-400">Your review</span>
+          <textarea value={body} onChange={(e) => setBody(e.target.value)} maxLength={4000} rows={4} required className={inputCls} placeholder="How was the trip?" />
+        </label>
+
+        {msg && <div className={cn("mb-3 rounded-lg px-4 py-2.5 text-sm", msg.ok ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600")}>{msg.text}</div>}
+
+        <div className="flex gap-3">
+          <Button type="button" variant="secondary" className="flex-1" onClick={onClose}>Cancel</Button>
+          <Button type="submit" className="flex-1" disabled={busy}>{busy ? "Saving…" : "Save review"}</Button>
+        </div>
+      </form>
     </div>
   );
 }
