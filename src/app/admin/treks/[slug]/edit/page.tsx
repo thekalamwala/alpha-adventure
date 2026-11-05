@@ -10,7 +10,7 @@ export default async function EditTrekPage(props: { params: Promise<{ slug: stri
   const { admin } = await requireAdmin();
   const { data: t } = await admin
     .from("treks")
-    .select("id,slug,title,summary,overview,hero_image,base_price,difficulty,status,group,tags,badge,region,location,state,duration_days,altitude,base_camp,best_season,group_size,featured,brochure_url,suitable_age,accommodation,fitness_criteria,not_to_miss,boarding_disclaimer,deposit_type,deposit_value,balance_due_offset_days")
+    .select("id,slug,title,summary,overview,hero_image,base_price,difficulty,status,group,tags,badge,region,location,state,duration_days,altitude,base_camp,best_season,group_size,featured,brochure_url,suitable_age,accommodation,fitness_criteria,not_to_miss,notes,boarding_disclaimer,deposit_type,deposit_value,balance_due_offset_days")
     .eq("slug", params.slug)
     .is("deleted_at", null)
     .maybeSingle();
@@ -52,6 +52,7 @@ export default async function EditTrekPage(props: { params: Promise<{ slug: stri
     accommodation: t.accommodation ?? "",
     fitness_criteria: t.fitness_criteria ?? "",
     not_to_miss: t.not_to_miss ?? [],
+    notes: t.notes ?? [],
     inclusions: (inc.data ?? []).map((r) => r.text),
     exclusions: (exc.data ?? []).map((r) => r.text),
     packages: (pkgs.data ?? []).map((p) => ({

@@ -11,7 +11,7 @@ export const getTrekBySlug = cache(async (slug: string) => {
 
   const baseCols =
     "id,slug,title,summary,overview,location,state,region,difficulty,duration_days,base_price,altitude,base_camp,best_season,group_size,hero_image,group";
-  const extraCols = ",not_to_miss,brochure_url,suitable_age,accommodation,fitness_criteria";
+  const extraCols = ",not_to_miss,notes,brochure_url,suitable_age,accommodation,fitness_criteria";
 
   // Prefer the extended select; if migration 0027 isn't applied yet the API
   // returns 42703 (undefined column) — fall back so the page still renders.
@@ -36,6 +36,7 @@ export const getTrekBySlug = cache(async (slug: string) => {
     difficulty: string | null;
     base_price: number | null;
     not_to_miss: string[] | null;
+    notes: string[] | null;
     brochure_url: string | null;
     suitable_age: string | null;
     accommodation: string | null;
@@ -58,6 +59,7 @@ export const getTrekBySlug = cache(async (slug: string) => {
       ? {
           ...retry.data,
           not_to_miss: [],
+          notes: [],
           brochure_url: null,
           suitable_age: null,
           accommodation: null,

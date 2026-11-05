@@ -136,6 +136,7 @@ export default function NewTrekForm() {
   const [fitnessCriteria, setFitnessCriteria] = useState("");
   const [brochureUrl, setBrochureUrl] = useState("");
   const [notToMiss, setNotToMiss] = useState<string[]>([""]);
+  const [notes, setNotes] = useState<string[]>([""]);
 
   const [inclusions, setInclusions] = useState<string[]>([""]);
   const [exclusions, setExclusions] = useState<string[]>([""]);
@@ -194,7 +195,7 @@ export default function NewTrekForm() {
       duration_days: durationDays || undefined,
       altitude, base_camp: baseCamp, best_season: bestSeason, group_size: groupSize, featured,
       suitable_age: suitableAge, accommodation, fitness_criteria: fitnessCriteria,
-      brochure_url: brochureUrl, not_to_miss: clean(notToMiss),
+      brochure_url: brochureUrl, not_to_miss: clean(notToMiss), notes: clean(notes),
       inclusions: clean(inclusions),
       exclusions: clean(exclusions),
       packages: packages
@@ -367,6 +368,9 @@ export default function NewTrekForm() {
             <div className="space-y-4">
               <ListRepeater items={notToMiss} setItems={setNotToMiss} placeholder="Konkan Kada cliff at sunrise" addLabel="Add highlight" />
               <Field label="Brochure / itinerary PDF" hint="· URL"><input className={inp} value={brochureUrl} onChange={(e) => setBrochureUrl(e.target.value)} placeholder="https://… .pdf" /></Field>
+              <Field label="Important notes" hint="· shown in the Trek Cost sidebar’s Important Note">
+                <ListRepeater items={notes} setItems={setNotes} placeholder="If travelling from Nagpur, check train availability first." addLabel="Add note" />
+              </Field>
             </div>
           </SectionCard>
 

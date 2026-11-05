@@ -58,6 +58,7 @@ const trekSchema = z.object({
   accommodation: z.string().trim().max(200).optional().or(z.literal("")),
   fitness_criteria: z.string().trim().max(500).optional().or(z.literal("")),
   not_to_miss: z.array(z.string().trim().min(1)).default([]),
+  notes: z.array(z.string().trim().min(1)).default([]),
   // children
   inclusions: z.array(z.string().trim().min(1)).default([]),
   exclusions: z.array(z.string().trim().min(1)).default([]),
@@ -139,6 +140,7 @@ export async function createTrek(raw: unknown): Promise<Result> {
       accommodation: blank(t.accommodation),
       fitness_criteria: blank(t.fitness_criteria),
       not_to_miss: t.not_to_miss,
+      notes: t.notes,
       boarding_disclaimer: blank(t.boarding_disclaimer),
       ...depositColumns(t),
     })

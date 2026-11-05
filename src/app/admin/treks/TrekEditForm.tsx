@@ -103,6 +103,7 @@ export type TrekEditInitial = {
   // Trek-detail extras shown on the public page (migration 0027).
   brochure_url: string; suitable_age: string; accommodation: string; fitness_criteria: string;
   not_to_miss: string[];
+  notes: string[];
   inclusions: string[]; exclusions: string[]; packages: Pkg[]; itinerary: Day[]; faqs: Faq[]; gallery: GalleryImg[];
   // Boarding locations (migration 0029), max 4.
   boarding: BoardingRow[]; boarding_disclaimer: string;
@@ -119,6 +120,7 @@ export default function TrekEditForm({ initial }: { initial: TrekEditInitial }) 
   const [inclusions, setInclusions] = useState<string[]>(initial.inclusions.length ? initial.inclusions : [""]);
   const [exclusions, setExclusions] = useState<string[]>(initial.exclusions.length ? initial.exclusions : [""]);
   const [notToMiss, setNotToMiss] = useState<string[]>(initial.not_to_miss.length ? initial.not_to_miss : [""]);
+  const [notes, setNotes] = useState<string[]>(initial.notes.length ? initial.notes : [""]);
   const [packages, setPackages] = useState<Pkg[]>(initial.packages);
   const [itinerary, setItinerary] = useState<Day[]>(initial.itinerary);
   const [faqs, setFaqs] = useState<Faq[]>(initial.faqs);
@@ -181,6 +183,7 @@ export default function TrekEditForm({ initial }: { initial: TrekEditInitial }) 
       brochure_url: f.brochure_url, suitable_age: f.suitable_age,
       accommodation: f.accommodation, fitness_criteria: f.fitness_criteria,
       not_to_miss: list(notToMiss),
+      notes: list(notes),
       inclusions: list(inclusions),
       exclusions: list(exclusions),
       packages: packages.filter((p) => p.name.trim()).map((p) => ({
@@ -330,6 +333,9 @@ export default function TrekEditForm({ initial }: { initial: TrekEditInitial }) 
             <div className="space-y-4">
               <ListRepeater items={notToMiss} setItems={setNotToMiss} placeholder="Konkan Kada cliff at sunrise" addLabel="Add highlight" />
               <Field label="Brochure / itinerary PDF" hint="· URL"><input className={inp} value={f.brochure_url} onChange={(e) => set("brochure_url", e.target.value)} placeholder="https://… .pdf" /></Field>
+              <Field label="Important notes" hint="· shown in the Trek Cost sidebar’s Important Note">
+                <ListRepeater items={notes} setItems={setNotes} placeholder="If travelling from Nagpur, check train availability first." addLabel="Add note" />
+              </Field>
             </div>
           </SectionCard>
 

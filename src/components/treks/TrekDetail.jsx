@@ -340,7 +340,7 @@ export default async function TrekDetail({ trek }) {
               <div className="lg:sticky lg:top-[110px]">
                 {/* TREK COST — sidebar, under the booking card */}
                 <div id="section-trek-cost">
-                  <RoutePricingCard slug={trek.slug} bookHref={bookHref} variant="trek" basePrice={trek.base_price} />
+                  <RoutePricingCard slug={trek.slug} bookHref={bookHref} variant="trek" basePrice={trek.base_price} notes={trek.notes} />
                 </div>
               </div>
             </div>

@@ -22,6 +22,7 @@ export type TrekDetail = {
   badge: string;
   facts: { region: string; location: string; state: string; durationDays: string; altitude: string; baseCamp: string; bestSeason: string; groupSize: string; suitableAge: string; accommodation: string; fitnessCriteria: string };
   notToMiss: string[];
+  notes: string[];
   brochureUrl: string;
   inclusions: string[];
   exclusions: string[];
@@ -42,7 +43,7 @@ export async function getTrekDetail(
   const { admin } = await requireAdmin();
   const { data: t } = await admin
     .from("treks")
-    .select("id,slug,title,summary,overview,hero_image,base_price,difficulty,status,group,tags,badge,region,location,state,duration_days,altitude,base_camp,best_season,group_size,suitable_age,accommodation,fitness_criteria,not_to_miss,brochure_url,boarding_disclaimer")
+    .select("id,slug,title,summary,overview,hero_image,base_price,difficulty,status,group,tags,badge,region,location,state,duration_days,altitude,base_camp,best_season,group_size,suitable_age,accommodation,fitness_criteria,not_to_miss,notes,brochure_url,boarding_disclaimer")
     .eq("slug", slug).is("deleted_at", null).maybeSingle();
   if (!t) return { ok: false, error: "Trek not found." };
 
@@ -78,6 +79,7 @@ export async function getTrekDetail(
         suitableAge: t.suitable_age ?? "", accommodation: t.accommodation ?? "", fitnessCriteria: t.fitness_criteria ?? "",
       },
       notToMiss: t.not_to_miss ?? [],
+      notes: t.notes ?? [],
       brochureUrl: t.brochure_url ?? "",
       inclusions: (inc.data ?? []).map((r) => r.text),
       exclusions: (exc.data ?? []).map((r) => r.text),
@@ -120,6 +122,7 @@ const rowSchema = z.object({
   accommodation: z.string().trim().max(200).optional().or(z.literal("")),
   fitness_criteria: z.string().trim().max(500).optional().or(z.literal("")),
   not_to_miss: z.array(z.string().trim().min(1)).default([]),
+  notes: z.array(z.string().trim().min(1)).default([]),
   // Child content (reconciled = delete + reinsert on save).
   inclusions: z.array(z.string().trim().min(1)).default([]),
   exclusions: z.array(z.string().trim().min(1)).default([]),
@@ -195,6 +198,7 @@ export async function updateTrek(slug: string, raw: unknown): Promise<Result> {
     accommodation: blank(t.accommodation),
     fitness_criteria: blank(t.fitness_criteria),
     not_to_miss: t.not_to_miss,
+    notes: t.notes,
     boarding_disclaimer: blank(t.boarding_disclaimer),
     ...depositColumns(t),
   }).eq("slug", slug).select("id").single();

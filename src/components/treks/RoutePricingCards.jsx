@@ -61,12 +61,14 @@ function PricingTable({ rows }) {
   );
 }
 
-function PricingCard({ title, data, bookHref, whatsapp, singlePrice, basePrice }) {
+function PricingCard({ title, data, bookHref, whatsapp, singlePrice, basePrice, notes }) {
   if (!data) return null;
   // Sidebar (singlePrice): one headline price from the trek's base_price (same
   // field the listing + booking use) so the detail price can't diverge from what
   // the customer pays. Falls back to the route table's first row.
   const headline = basePrice != null ? rupees(basePrice) : data.rows?.[0]?.price;
+  // Prefer per-trek notes (admin-editable, DB) over the static route-pricing notes.
+  const noteList = notes && notes.length ? notes : (data.notes || []);
   return (
     <div className="flex h-full flex-col rounded-xl2 border border-line/70 bg-white p-6 shadow-soft sm:p-8">
       <h3 className="text-2xl font-extrabold text-ink">{title}</h3>
@@ -109,17 +111,17 @@ function PricingCard({ title, data, bookHref, whatsapp, singlePrice, basePrice }
 
       {singlePrice ? (
         // Compact sidebar: notes behind an "Important Note" button → modal.
-        <ImportantNoteButton notes={data.notes} />
-      ) : (
+        <ImportantNoteButton notes={noteList} />
+      ) : noteList.length ? (
         <div className="mt-6 min-h-[150px] flex-1">
           <h4 className="mb-2 text-sm font-bold text-ink">Note:</h4>
           <ol className="list-decimal space-y-1.5 pl-5 text-sm leading-relaxed text-gray-600">
-            {data.notes.map((n) => (
+            {noteList.map((n) => (
               <li key={n}>{n}</li>
             ))}
           </ol>
         </div>
-      )}
+      ) : null}
 
       {phoneHref && (
         <a
@@ -137,7 +139,7 @@ function PricingCard({ title, data, bookHref, whatsapp, singlePrice, basePrice }
 // renders just the Trek Cost card (sidebar); `variant="trip"` renders just the
 // Trip Cost card (full-width). Looks up data by slug; renders nothing when the
 // requested card has no data for the trek.
-export function RoutePricingCard({ slug, bookHref, variant = "trek", basePrice }) {
+export function RoutePricingCard({ slug, bookHref, variant = "trek", basePrice, notes }) {
   let data =
     variant === "tour" ? tourTripCostBySlug[slug] : variant === "trip" ? tripCostBySlug[slug] : trekCostBySlug[slug];
   const title = variant === "tour" ? "Trip Cost" : variant === "trip" ? "Trip Cost" : "Trek Cost";
@@ -150,7 +152,7 @@ export function RoutePricingCard({ slug, bookHref, variant = "trek", basePrice }
   const whatsapp = variant === "tour" ? site.whatsapp : null;
   // The trek sidebar shows a single headline price (original design); the
   // full-width trip/tour cards keep the detailed route table.
-  return <PricingCard title={title} data={data} bookHref={bookHref} whatsapp={whatsapp} singlePrice={variant === "trek"} basePrice={basePrice} />;
+  return <PricingCard title={title} data={data} bookHref={bookHref} whatsapp={whatsapp} singlePrice={variant === "trek"} basePrice={basePrice} notes={notes} />;
 }
 
 export default function RoutePricingCards({ slug, bookHref }) {
