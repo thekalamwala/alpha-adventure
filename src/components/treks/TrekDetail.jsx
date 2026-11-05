@@ -194,7 +194,7 @@ export default async function TrekDetail({ trek }) {
             {trek.packages.map((p, i) => (
               <div key={i} className="flex flex-col rounded-xl2 border border-line/70 bg-white p-6">
                 <h6 className="mb-1 font-bold text-ink">{p.name}</h6>
-                <div className="mb-3 text-[22px] font-extrabold text-primary">{rupees(trek.base_price ?? p.price)} <small className="font-medium text-gray-500">/ person</small></div>
+                <div className="mb-3 text-[22px] font-extrabold text-primary">{rupees(p.price)} <small className="font-medium text-gray-500">/ person</small></div>
                 <ul className="mb-5 flex-1 space-y-2.5">
                   {p.inclusions.map((t, j) => (
                     <li key={j} className="flex items-start gap-2.5 text-sm text-gray-600"><i className="bi bi-check-circle-fill mt-0.5 text-green-600" /> {t}</li>
@@ -340,7 +340,7 @@ export default async function TrekDetail({ trek }) {
               <div className="lg:sticky lg:top-[110px]">
                 {/* TREK COST — sidebar, under the booking card */}
                 <div id="section-trek-cost">
-                  <RoutePricingCard slug={trek.slug} bookHref={bookHref} variant="trek" basePrice={trek.base_price} />
+                  <RoutePricingCard slug={trek.slug} bookHref={bookHref} variant="trek" />
                 </div>
               </div>
             </div>
