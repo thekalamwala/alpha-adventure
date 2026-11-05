@@ -1,6 +1,7 @@
 import SiteHeader from "@/components/layout/SiteHeader";
 import SiteFooter from "@/components/layout/SiteFooter";
 import SiteChrome from "@/components/layout/SiteChrome";
+import HeaderProfile from "@/components/layout/HeaderProfile";
 import MagicCursor from "@/components/layout/MagicCursor";
 import MegaMenu from "@/components/layout/MegaMenu";
 import TemplateScripts from "@/components/TemplateScripts";
@@ -36,6 +37,7 @@ export default function SiteLayout({ children }) {
         {children}
       </SiteChrome>
       <MegaMenu />
+      <HeaderProfile />
       <TemplateScripts />
     </>
   );

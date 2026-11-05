@@ -35,6 +35,30 @@ html .border-primary { border-color: #fe5100 !important; }
   .trek-section-nav { top: 0; }
 }
 
+/* Header profile avatar (replaces the static "Dashboard" button via HeaderProfile). */
+.aa-profile { position: relative; display: inline-block; }
+.aa-profile-avatar {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px; border-radius: 9999px;
+  background: var(--primary-color1, #ff6b00); color: #fff;
+  font-weight: 700; font-size: 16px; border: none; cursor: pointer; text-decoration: none;
+}
+.aa-profile-avatar i { font-size: 20px; }
+.aa-profile-menu {
+  position: absolute; right: 0; top: calc(100% + 8px); min-width: 210px;
+  background: #fff; border: 1px solid #E8E8E8; border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0,0,0,.14); z-index: 60; overflow: hidden;
+}
+.aa-profile-head { padding: 12px 16px; border-bottom: 1px solid #eee; display: flex; flex-direction: column; }
+.aa-profile-head strong { color: #111; font-size: 14px; }
+.aa-profile-head span { color: #777; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.aa-profile-menu a, .aa-profile-menu button {
+  display: block; width: 100%; text-align: left; padding: 10px 16px;
+  font-size: 14px; color: #333; background: none; border: none; cursor: pointer; text-decoration: none;
+}
+.aa-profile-menu a:hover, .aa-profile-menu button:hover { background: #f6f6f6; }
+.aa-profile-menu .aa-signout { color: #dc2626; }
+
 /* Standard primary buttons (.btn-primary, booking .bk-btn-primary) get the same
    hover slide-to-dark as the legacy .primary-btn1: a dark panel slides up behind
    the label. Label stays above via the isolate/z-index:-1 pairing. */
