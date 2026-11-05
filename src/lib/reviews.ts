@@ -1,6 +1,5 @@
 import "server-only";
-import { cookies } from "next/headers";
-import { createClient } from "@/utils/supabase/server";
+import { createAdminClient } from "@/utils/supabase/admin";
 
 export type PublicReview = {
   id: string;
@@ -11,15 +10,17 @@ export type PublicReview = {
   date: string | null;
 };
 
-// Approved reviews for a trek, for the public detail page. Uses the RLS-scoped
-// SSR client; the reviews_read policy exposes only status='published' rows, so no
-// pending/rejected review can leak here. author_name is denormalised on the row,
-// so we never touch the private profiles table.
+// Approved reviews for a trek, for the public detail page. Uses the cookie-free
+// service-role client (not the SSR/cookies client) so this stays compatible with
+// the trek page's ISR `revalidate` — reading cookies there throws in Next 15.
+// Service role bypasses RLS, so we filter status='published' EXPLICITLY; no
+// pending/rejected review can leak. author_name is denormalised on the row, so we
+// never touch the private profiles table.
 export async function getTrekReviews(
   trekId: string | null | undefined,
 ): Promise<{ items: PublicReview[]; avg: number; count: number }> {
   if (!trekId) return { items: [], avg: 0, count: 0 };
-  const supabase = createClient(await cookies());
+  const supabase = createAdminClient();
   const { data } = await supabase
     .from("reviews")
     .select("id,rating,title,body,author_name,published_at,created_at")
