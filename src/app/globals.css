@@ -41,13 +41,13 @@ html .border-primary { border-color: #fe5100 !important; }
   display: inline-flex; align-items: center; justify-content: center;
   width: 44px; height: 44px; border-radius: 9999px;
   background: var(--primary-color1, #ff6b00); color: #fff;
-  font-weight: 700; font-size: 16px; border: none; cursor: pointer; text-decoration: none;
+  font-weight: 700; font-size: 16px; border: 2px solid #cbd5e1; cursor: pointer; text-decoration: none;
 }
 .aa-profile-avatar i { font-size: 20px; }
 .aa-profile-menu {
-  position: absolute; right: 0; top: calc(100% + 8px); min-width: 210px;
+  position: fixed; min-width: 210px;
   background: #fff; border: 1px solid #E8E8E8; border-radius: 12px;
-  box-shadow: 0 12px 32px rgba(0,0,0,.14); z-index: 60; overflow: hidden;
+  box-shadow: 0 12px 32px rgba(0,0,0,.14); z-index: 100000; overflow: hidden;
 }
 .aa-profile-head { padding: 12px 16px; border-bottom: 1px solid #eee; display: flex; flex-direction: column; }
 .aa-profile-head strong { color: #111; font-size: 14px; }
