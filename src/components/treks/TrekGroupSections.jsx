@@ -18,7 +18,7 @@ export default function TrekGroupSections({ sections }) {
             ))}
           </div>
           {s.href && (
-            <div className="mt-6">
+            <div className="mt-10">
               <Link href={s.href} className="text-primary font-semibold hover:underline">
                 Explore all {s.title} →
               </Link>

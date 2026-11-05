@@ -3,6 +3,7 @@ import path from "path";
 import { getHomeTreks, getTopTreks } from "@/lib/trekListing";
 import { getTours } from "@/lib/tourListing";
 import { getTestimonials } from "@/lib/contentListing";
+import HeroSearch from "@/components/home/HeroSearch";
 
 export const revalidate = 300;
 
@@ -146,5 +147,11 @@ export default async function HomePage() {
       });
     }
   }
-  return <div suppressHydrationWarning dangerouslySetInnerHTML={{ __html: html }} />;
+  return (
+    <>
+      <div suppressHydrationWarning dangerouslySetInnerHTML={{ __html: html }} />
+      {/* Enhances the static hero search into a real typeahead over live treks. */}
+      <HeroSearch />
+    </>
+  );
 }
