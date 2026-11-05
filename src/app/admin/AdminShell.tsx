@@ -93,6 +93,7 @@ const NAV = [
   ] },
   { key: "customers", label: "Customers", icon: Users, items: [
     { key: "all-customers", label: "All Customers" }, { key: "reviews", label: "Testimonials" },
+    { key: "cust-reviews", label: "Reviews", href: "/admin/reviews" },
   ] },
   { key: "finance", label: "Finance", icon: Banknote, items: [
     { key: "payments", label: "Payments" }, { key: "refunds", label: "Refunds" }, { key: "payouts", label: "Payouts" },

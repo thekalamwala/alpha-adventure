@@ -2,7 +2,54 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { navLinks, site } from "@/data/site";
+import { createClient } from "@/utils/supabase/client";
+
+// Logged-out: a "Log in" button. Logged-in: an avatar + name dropdown
+// (Dashboard / Profile / Sign out), replacing the old plain "Dashboard" button.
+function ProfileMenu({ auth, onSignOut }) {
+  const [open, setOpen] = useState(false);
+
+  // Keep a stable Dashboard link while the session is still resolving (no flash).
+  if (auth.loading || !auth.user) {
+    return (
+      <Link href={auth.user ? "/user-dashboard" : "/login"} className="primary-btn1 four transparent">
+        <span>{auth.user ? "Dashboard" : "Log in"}</span>
+        <span>{auth.user ? "Dashboard" : "Log in"}</span>
+      </Link>
+    );
+  }
+
+  const label = auth.name || auth.email || "Account";
+  const initials = (auth.name || auth.email || "A").slice(0, 1).toUpperCase();
+
+  return (
+    <div style={{ position: "relative" }}>
+      <button type="button" onClick={() => setOpen((v) => !v)} aria-haspopup="menu" aria-expanded={open}
+        className="flex items-center gap-2 rounded-full bg-white/90 py-1 pl-1 pr-3 shadow-soft">
+        <span className="grid h-9 w-9 place-items-center rounded-full bg-primary/10 font-bold text-primary">{initials}</span>
+        <span className="hidden max-w-[120px] truncate text-sm font-medium text-ink sm:inline">{label}</span>
+        <i className="bi bi-caret-down-fill text-xs text-gray-400" />
+      </button>
+      {open && (
+        <>
+          <div onClick={() => setOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 40 }} />
+          <div className="rounded-xl border border-line bg-white py-1 shadow-card"
+            style={{ position: "absolute", right: 0, top: "calc(100% + 8px)", minWidth: 210, zIndex: 50 }}>
+            <div className="border-b border-line px-4 py-3">
+              <div className="truncate font-semibold text-ink">{label}</div>
+              {auth.email && <div className="truncate text-xs text-gray-500">{auth.email}</div>}
+            </div>
+            <Link href="/user-dashboard" onClick={() => setOpen(false)} className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-slate-50">Dashboard</Link>
+            <Link href="/user-dashboard" onClick={() => setOpen(false)} className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-slate-50">Profile &amp; Medical</Link>
+            <button type="button" onClick={() => { setOpen(false); onSignOut(); }} className="block w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50">Sign out</button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 function hasChildren(item) {
   return Array.isArray(item.children) && item.children.length > 0;
@@ -70,6 +117,8 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [auth, setAuth] = useState({ loading: true, user: null, name: "", email: "" });
+  const router = useRouter();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 30);
@@ -77,6 +126,31 @@ export default function Navbar() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  // Resolve the signed-in user (and name) for the profile menu, and keep it in
+  // sync with sign-in/out via onAuthStateChange.
+  useEffect(() => {
+    const supabase = createClient();
+    let live = true;
+    async function load() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!live) return;
+      if (!user) { setAuth({ loading: false, user: null, name: "", email: "" }); return; }
+      const { data: p } = await supabase.from("profiles").select("first_name,last_name").eq("id", user.id).maybeSingle();
+      if (!live) return;
+      const name = [p?.first_name, p?.last_name].filter(Boolean).join(" ");
+      setAuth({ loading: false, user, name, email: user.email ?? "" });
+    }
+    load();
+    const { data: sub } = supabase.auth.onAuthStateChange(() => load());
+    return () => { live = false; sub.subscription.unsubscribe(); };
+  }, []);
+
+  async function signOut() {
+    try { await createClient().auth.signOut(); } catch { /* clear locally anyway */ }
+    router.push("/");
+    router.refresh();
+  }
 
   return (
     <>
@@ -106,10 +180,7 @@ export default function Navbar() {
                 <Link href="/about-us">Why Us</Link>
                 <Link href="/contact">Need Help?</Link>
               </div>
-              <Link href="/user-dashboard" className="primary-btn1 four transparent">
-                <span>Dashboard</span>
-                <span>Dashboard</span>
-              </Link>
+              <ProfileMenu auth={auth} onSignOut={signOut} />
             </div>
           </div>
         </div>
@@ -138,10 +209,7 @@ export default function Navbar() {
           </div>
 
           <div className="language-and-login-area d-lg-flex d-none align-items-center gap-3">
-            <Link href="/user-dashboard" className="primary-btn1 four transparent">
-              <span>Dashboard</span>
-              <span>Dashboard</span>
-            </Link>
+            <ProfileMenu auth={auth} onSignOut={signOut} />
           </div>
 
           <button

@@ -9,9 +9,16 @@ import DownloadItinerary from "./DownloadItinerary";
 import TrekHeroSlider from "./TrekHeroSlider";
 import RoutePricingCards, { RoutePricingCard } from "./RoutePricingCards";
 import NotToMissSlider from "./NotToMissSlider";
+import { getTrekReviews } from "@/lib/reviews";
 
 const rupees = (paise) => "₹" + (paise / 100).toLocaleString("en-IN");
 const cap = (s) => (s ? s[0].toUpperCase() + s.slice(1) : s);
+
+// Rating stars (filled + hollow), matches the amber rating used elsewhere.
+const Stars = ({ n = 0 }) => {
+  const r = Math.round(n);
+  return <span className="text-amber-500" aria-label={`${n.toFixed(1)} out of 5`}>{"★".repeat(r)}{"☆".repeat(5 - r)}</span>;
+};
 
 // CTA arrow, matches the theme's inline-svg buttons.
 const BtnArrow = () => (
@@ -47,7 +54,8 @@ function Fact({ icon, label, value, href }) {
 
 // Trek detail in the legacy theme skin (mirrors the trek-detail template),
 // driven by a single joined trek object from Supabase.
-export default function TrekDetail({ trek }) {
+export default async function TrekDetail({ trek }) {
+  const reviews = await getTrekReviews(trek.id);
   const durationLabel = trek.duration_days ? `${trek.duration_days} Day${trek.duration_days > 1 ? "s" : ""}` : null;
   const bookHref = `/book/${trek.slug}`;
   const section = SECTION_META[sectionOf(trek.group) ?? "treks"];
@@ -235,6 +243,42 @@ export default function TrekDetail({ trek }) {
             title: <span className="font-semibold text-ink">{f.question}</span>,
             body: <p className="leading-relaxed">{f.answer}</p>,
           }))} />
+        </div>
+      ),
+    });
+  }
+  // Reviews — only approved ones (getTrekReviews filters to published). Section is
+  // omitted entirely when there are none yet (graceful empty state).
+  if (reviews.count > 0) {
+    sections.push({
+      id: "reviews",
+      label: "Reviews",
+      node: (
+        <div>
+          <div className="mb-6 flex items-center gap-3">
+            <span className="text-3xl font-extrabold text-ink">{reviews.avg.toFixed(1)}</span>
+            <span>
+              <Stars n={reviews.avg} />
+              <span className="ml-2 text-sm text-gray-500">{reviews.count} review{reviews.count > 1 ? "s" : ""}</span>
+            </span>
+          </div>
+          <div className="space-y-4">
+            {reviews.items.map((r) => (
+              <div key={r.id} className="rounded-xl2 border border-line/70 bg-white p-5">
+                <div className="mb-1 flex items-center justify-between gap-3">
+                  <strong className="text-ink">{r.author}</strong>
+                  <Stars n={r.rating} />
+                </div>
+                {r.date && (
+                  <div className="mb-2 text-xs text-gray-500">
+                    {new Date(r.date).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
+                  </div>
+                )}
+                {r.title && <div className="font-semibold text-ink">{r.title}</div>}
+                {r.body && <p className="mt-1 whitespace-pre-wrap leading-relaxed text-gray-600">{r.body}</p>}
+              </div>
+            ))}
+          </div>
         </div>
       ),
     });
