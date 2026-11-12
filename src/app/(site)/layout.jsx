@@ -24,6 +24,7 @@ const templateCss = [
   "style.css?v=1786605966",
   "card-custom.css",
   "search.css?v=1786605966",
+  "site-overrides.css?v=1",
 ];
 
 export default function SiteLayout({ children }) {

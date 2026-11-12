@@ -1,6 +1,6 @@
 <!-- Breadcrumb section Start-->
     <div class="breadcrumb-section"
-        style="background-image: linear-gradient(270deg, rgba(17, 15, 15, 0.55) 0%, rgba(17, 15, 15, 0.55) 100%), url('assets/img/innerpages/breadcrumb-bg1.jpg');">
+        style="background-image: linear-gradient(270deg, rgba(17, 15, 15, 0.55) 0%, rgba(17, 15, 15, 0.55) 100%), url('/assets/img/innerpages/breadcrumb-bg1.jpg');">
         <div class="container">
             <div class="banner-content">
                 <h1>Packing Checklist</h1>
@@ -13,241 +13,77 @@
     </div>
     <!-- Breadcrumb section End-->
 
-    <!-- Packing Checklist Section Start -->
-    <div class="packing-checklist-section">
-        <div class="container">
+    <link rel="stylesheet" href="/assets/css/guides.css?v=1">
 
-            <!-- Print-Only Header Block -->
-            <div class="print-header d-none">
-                <h1>ALPHA ADVENTURES</h1>
-                <p class="text-center fw-medium mb-3">TREKKING PACKING CHECKLIST</p>
-                <div class="print-meta-grid">
-                    <div class="print-meta-item">
-                        <strong>Trek Name:</strong> <span id="print-meta-trek-name" class="print-meta-value"></span>
-                    </div>
-                    <div class="print-meta-item">
-                        <strong>Trek Date:</strong> <span id="print-meta-trek-date" class="print-meta-value"></span>
-                    </div>
-                    <div class="print-meta-item">
-                        <strong>Trekker Name:</strong> <span id="print-meta-trekker-name" class="print-meta-value"></span>
-                    </div>
-                </div>
+    <div class="ag-guide">
+        <div class="wrap">
+            <p class="ag-lede">This page follows the packing lists we send to travellers once they register. Pick your trip type and your season, and the list changes to match. Tick items off as you pack, and print a copy if you like. Items needed only in some seasons carry a note in brackets, for example (Required in winter). Items marked Recommended or Optional are our extra suggestions on top of the list we send you.</p>
+
+            <div class="ag-banner">
+                <strong>Pack for the trip you are taking, not for every "what if".</strong> Every extra item is weight you carry up and down the trail. If your trek leader or trip captain sends a list for your specific trip, follow that one first.
             </div>
 
-            <div class="row">
-                <!-- Left Sidebar: Progress & Filters -->
-                <div class="col-lg-4 col-md-5">
-                    <div class="checklist-sidebar">
+            <noscript><div class="ag-callout">This checklist needs JavaScript to work. Please turn it on, or message us on WhatsApp and we will send you the list.</div></noscript>
 
-                        <!-- Progress Card -->
-                        <div class="checklist-progress-card">
-                            <div class="checklist-progress-header">
-                                <h5 class="fw-bold mb-0 text-dark">Your Progress</h5>
-                                <span id="overall-progress-percentage" class="checklist-progress-percentage">0%</span>
-                            </div>
-                            <div class="checklist-progress-bar-container">
-                                <div id="overall-progress-bar" class="checklist-progress-bar"></div>
-                            </div>
-                            <p id="overall-progress-text" class="text-muted small mb-0">0 of 0 packed</p>
-                        </div>
-
-                        <!-- Print Meta Info Input (Pre-fill details for printout) -->
-                        <div class="checklist-progress-card">
-                            <h5 class="fw-bold mb-3 text-dark">Print Details</h5>
-                            <div class="mb-2">
-                                <label for="print-trekker-name-input" class="small text-muted mb-1">Trekker Name</label>
-                                <input type="text" id="print-trekker-name-input" class="form-control form-control-sm" placeholder="Your Name">
-                            </div>
-                            <div class="mb-2">
-                                <label for="print-trek-name-input" class="small text-muted mb-1">Trek Name</label>
-                                <input type="text" id="print-trek-name-input" class="form-control form-control-sm" placeholder="e.g. Kedarkantha Trek">
-                            </div>
-                            <div class="mb-3">
-                                <label for="print-trek-date-input" class="small text-muted mb-1">Departure Date</label>
-                                <input type="text" id="print-trek-date-input" class="form-control form-control-sm" placeholder="e.g. Dec 25, 2026">
-                            </div>
-                            <p class="text-muted small mb-0"><i class="bi bi-info-circle me-1"></i> These details will appear at the top of the printed checklist sheet.</p>
-                        </div>
-
-                        <!-- Filters Card -->
-                        <div class="checklist-filter-card">
-                            <h5 class="fw-bold mb-3 text-dark">Filters & Search</h5>
-
-                            <!-- Search -->
-                            <div class="checklist-search-wrapper">
-                                <i class="bi bi-search"></i>
-                                <input type="text" id="checklist-search" class="checklist-search-input" placeholder="Search items...">
-                            </div>
-
-                            <!-- Seasons -->
-                            <div class="season-filters">
-                                <span class="d-block small text-muted mb-2 fw-medium">TREK SEASON / TYPE</span>
-                                <button class="season-filter-btn active" data-season="all">
-                                    <i class="bi bi-grid-fill"></i> All Seasons
-                                </button>
-                                <button class="season-filter-btn" data-season="summer">
-                                    <i class="bi bi-sun-fill"></i> Summer Trek
-                                </button>
-                                <button class="season-filter-btn" data-season="winter">
-                                    <i class="bi bi-snowflake"></i> Winter Trek
-                                </button>
-                                <button class="season-filter-btn" data-season="monsoon">
-                                    <i class="bi bi-cloud-rain-fill"></i> Monsoon Trek
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Actions block -->
-                        <div class="mt-4">
-                            <button id="print-checklist-btn" class="checklist-action-btn btn-print-checklist">
-                                <i class="bi bi-printer-fill"></i> Print Checklist
-                            </button>
-                            <button id="reset-checklist-btn" class="checklist-action-btn btn-reset-checklist">
-                                <i class="bi bi-arrow-counterclockwise"></i> Reset Checklist
-                            </button>
-                        </div>
-
-                    </div>
+            <section class="ag-panel" aria-label="Choose your trip">
+                <div class="group">
+                    <p class="step">Step 1</p>
+                    <h2>Choose your trip type</h2>
+                    <div class="ag-tabs" id="tabs" role="group" aria-label="Trip type"></div>
                 </div>
-
-                <!-- Right Content: Interactive Checklists by Category -->
-                <div class="col-lg-8 col-md-7">
-
-                    <!-- 1. Clothing -->
-                    <div class="checklist-card">
-                        <div class="checklist-category-header">
-                            <h3 class="checklist-category-title">
-                                <i class="bi bi-tag-fill theme-text-primary"></i> Clothing (Upper & Lower Body)
-                            </h3>
-                            <span id="progress-badge-clothing" class="checklist-category-progress">0/0</span>
-                        </div>
-                        <div id="list-clothing" class="checklist-items-list">
-                            <!-- Items populated dynamically by JS -->
-                        </div>
-                        <div class="add-custom-item-container">
-                            <input type="text" id="input-clothing" class="add-custom-input" placeholder="Add custom clothing item..." onkeyup="handleCustomInputKey(event, 'clothing')">
-                            <button class="add-custom-btn" onclick="addCustomItem('clothing')" title="Add item">
-                                <i class="bi bi-plus-lg"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- 2. Footwear -->
-                    <div class="checklist-card">
-                        <div class="checklist-category-header">
-                            <h3 class="checklist-category-title">
-                                <i class="bi bi-cursor-fill theme-text-primary"></i> Footwear
-                            </h3>
-                            <span id="progress-badge-footwear" class="checklist-category-progress">0/0</span>
-                        </div>
-                        <div id="list-footwear" class="checklist-items-list">
-                            <!-- Items populated dynamically by JS -->
-                        </div>
-                        <div class="add-custom-item-container">
-                            <input type="text" id="input-footwear" class="add-custom-input" placeholder="Add custom footwear item..." onkeyup="handleCustomInputKey(event, 'footwear')">
-                            <button class="add-custom-btn" onclick="addCustomItem('footwear')" title="Add item">
-                                <i class="bi bi-plus-lg"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- 3. Gear & Equipment -->
-                    <div class="checklist-card">
-                        <div class="checklist-category-header">
-                            <h3 class="checklist-category-title">
-                                <i class="bi bi-compass-fill theme-text-primary"></i> Gear & Equipment
-                            </h3>
-                            <span id="progress-badge-gear" class="checklist-category-progress">0/0</span>
-                        </div>
-                        <div id="list-gear" class="checklist-items-list">
-                            <!-- Items populated dynamically by JS -->
-                        </div>
-                        <div class="add-custom-item-container">
-                            <input type="text" id="input-gear" class="add-custom-input" placeholder="Add custom gear item..." onkeyup="handleCustomInputKey(event, 'gear')">
-                            <button class="add-custom-btn" onclick="addCustomItem('gear')" title="Add item">
-                                <i class="bi bi-plus-lg"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- 4. Toiletries -->
-                    <div class="checklist-card">
-                        <div class="checklist-category-header">
-                            <h3 class="checklist-category-title">
-                                <i class="bi bi-droplet-fill theme-text-primary"></i> Toiletries & Hygiene
-                            </h3>
-                            <span id="progress-badge-toiletries" class="checklist-category-progress">0/0</span>
-                        </div>
-                        <div id="list-toiletries" class="checklist-items-list">
-                            <!-- Items populated dynamically by JS -->
-                        </div>
-                        <div class="add-custom-item-container">
-                            <input type="text" id="input-toiletries" class="add-custom-input" placeholder="Add custom toiletries item..." onkeyup="handleCustomInputKey(event, 'toiletries')">
-                            <button class="add-custom-btn" onclick="addCustomItem('toiletries')" title="Add item">
-                                <i class="bi bi-plus-lg"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- 5. Medical Kit -->
-                    <div class="checklist-card">
-                        <div class="checklist-category-header">
-                            <h3 class="checklist-category-title">
-                                <i class="bi bi-heart-pulse-fill theme-text-primary"></i> First Aid & Medical Kit
-                            </h3>
-                            <span id="progress-badge-medical" class="checklist-category-progress">0/0</span>
-                        </div>
-                        <div id="list-medical" class="checklist-items-list">
-                            <!-- Items populated dynamically by JS -->
-                        </div>
-                        <div class="add-custom-item-container">
-                            <input type="text" id="input-medical" class="add-custom-input" placeholder="Add custom medical item..." onkeyup="handleCustomInputKey(event, 'medical')">
-                            <button class="add-custom-btn" onclick="addCustomItem('medical')" title="Add item">
-                                <i class="bi bi-plus-lg"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- 6. Documents & Cash -->
-                    <div class="checklist-card">
-                        <div class="checklist-category-header">
-                            <h3 class="checklist-category-title">
-                                <i class="bi bi-file-earmark-text-fill theme-text-primary"></i> Documents & Cash
-                            </h3>
-                            <span id="progress-badge-documents" class="checklist-category-progress">0/0</span>
-                        </div>
-                        <div id="list-documents" class="checklist-items-list">
-                            <!-- Items populated dynamically by JS -->
-                        </div>
-                        <div class="add-custom-item-container">
-                            <input type="text" id="input-documents" class="add-custom-input" placeholder="Add custom document/cash item..." onkeyup="handleCustomInputKey(event, 'documents')">
-                            <button class="add-custom-btn" onclick="addCustomItem('documents')" title="Add item">
-                                <i class="bi bi-plus-lg"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- 7. Miscellaneous -->
-                    <div class="checklist-card">
-                        <div class="checklist-category-header">
-                            <h3 class="checklist-category-title">
-                                <i class="bi bi-box-seam-fill theme-text-primary"></i> Miscellaneous
-                            </h3>
-                            <span id="progress-badge-miscellaneous" class="checklist-category-progress">0/0</span>
-                        </div>
-                        <div id="list-miscellaneous" class="checklist-items-list">
-                            <!-- Items populated dynamically by JS -->
-                        </div>
-                        <div class="add-custom-item-container">
-                            <input type="text" id="input-miscellaneous" class="add-custom-input" placeholder="Add custom item..." onkeyup="handleCustomInputKey(event, 'miscellaneous')">
-                            <button class="add-custom-btn" onclick="addCustomItem('miscellaneous')" title="Add item">
-                                <i class="bi bi-plus-lg"></i>
-                            </button>
-                        </div>
-                    </div>
-
+                <div class="group">
+                    <p class="step">Step 2</p>
+                    <h2>Choose your season</h2>
+                    <div class="ag-chips" id="seasonChips" role="group" aria-label="Season"></div>
+                    <p class="ag-helper" id="seasonHelp">Summer and Pre Monsoon is March, April, May and early June. Monsoon is mid June, July, August and September. Post Monsoon is October and November. Winter is December, January and February. If your dates fall between two seasons, ask us before you buy anything.</p>
                 </div>
+                <div class="group" id="terrainWrap" hidden>
+                    <p class="step">Step 3</p>
+                    <h2>Choose your backpacking trip</h2>
+                    <div class="ag-chips" id="terrainChips" role="group" aria-label="Backpacking trip"></div>
+                    <p class="ag-helper">Only trips we have a packing list for are shown here. For any other backpacking trip, we send you the list once you register. You can also message us on WhatsApp.</p>
+                </div>
+                <div class="ag-note-box" id="seasonNote" hidden></div>
+                <div class="ag-note-box" id="terrainNote" hidden></div>
+            </section>
+
+            <section class="ag-panel" aria-label="Your progress">
+                <div class="ag-progress-row">
+                    <span class="pct" id="pct">0%</span>
+                    <span class="cnt" id="cnt">0 of 0 packed</span>
+                </div>
+                <div class="ag-bar" aria-hidden="true"><span id="fill"></span></div>
+                <div class="ag-fields">
+                    <div><label for="fName">Trekker name</label><input id="fName" type="text" autocomplete="name"></div>
+                    <div><label for="fTrip">Trek or trip name</label><input id="fTrip" type="text"></div>
+                    <div><label for="fDate">Departure date</label><input id="fDate" type="date"></div>
+                </div>
+                <p class="ag-helper">These details appear at the top of the printed sheet.</p>
+                <div class="ag-btn-row">
+                    <button class="ag-btn primary" id="btnPrint" type="button">Print checklist</button>
+                    <button class="ag-btn ghost" id="btnReset" type="button">Reset this list</button>
+                </div>
+            </section>
+
+            <div class="ag-print-head" id="printHead">
+                <h1>Alpha Adventures: Packing Checklist</h1>
+                <p id="phType"></p>
+                <p id="phWho"></p>
+            </div>
+
+            <div class="ag-facts" id="facts"></div>
+            <p class="ag-cat-intro" id="catIntro"></p>
+
+            <div id="lists"></div>
+
+            <div class="ag-avoid" id="avoid"></div>
+
+            <h2 class="ag-title noprint" style="margin:8px 0 14px;">Before you go</h2>
+            <div class="ag-linkgrid noprint">
+                <a href="/guides/safety-guidelines"><span class="lt">Safety Guidelines</span><span class="ld">How we manage safety, and what we ask of every traveller.</span></a>
+                <a href="/guides/fitness-requirements"><span class="lt">Fitness Requirements</span><span class="ld">What to train for your trek, and how long it takes.</span></a>
+                <a href="/guides/beginner-trek-guide"><span class="lt">Beginner Trek Guide</span><span class="ld">New to trekking? Start here.</span></a>
+                <a href="/guides/responsible-travel"><span class="lt">Responsible Travel</span><span class="ld">How to leave the places you visit as you found them.</span></a>
             </div>
         </div>
     </div>
-    <!-- Packing Checklist Section End -->
