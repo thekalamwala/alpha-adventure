@@ -1,0 +1,41 @@
+/* Site overrides, loaded last for every (site) page.
+   -------------------------------------------------------------------------
+   Inner-page hero titles: match the corporate / about hero H1 style
+   (Poppins 700, Bootstrap display-4 size, tight line-height).
+   The homepage hero uses .banner-content WITHOUT a .breadcrumb-section
+   ancestor, so it is intentionally left untouched. PageHero (React) and the
+   corporate/about heroes are already display-4 fw-bold, so they are unaffected. */
+.breadcrumb-section .banner-content h1 {
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  font-size: calc(1.475rem + 2.7vw) !important;
+}
+@media (min-width: 1200px) {
+  .breadcrumb-section .banner-content h1 {
+    font-size: 3.5rem !important;
+  }
+}
+
+/* Partner "trusted by" strip — text treatment (swap each .partner-name
+   <span> for an <img> logo when the client provides files). Keeps the
+   existing marquee scroll. */
+.partner-wrap-text .marquee__group { align-items: center; }
+.partner-wrap-text .partner-name {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  margin: 0 8px;
+  padding: 11px 24px;
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: .01em;
+  color: #5b6670;
+  background: #fff;
+  border: 1px solid #e6e2db;
+  border-radius: 999px;
+  transition: color .15s, border-color .15s;
+}
+.partner-wrap-text .partner-name:hover {
+  color: #c23d00;
+  border-color: #fe5100;
+}
