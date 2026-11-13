@@ -39,3 +39,51 @@
   color: #c23d00;
   border-color: #fe5100;
 }
+
+/* ------------------------------------------------------------------
+   Mobile homepage hero fix. The home2 banner has a fixed height
+   (470px ≤576), absolutely-positioned content, and the search card
+   (.filter-wrapper) pulled up -110px over it. On narrow phones the
+   big H1 wrapped to the screen edges and the subtext fell under the
+   card. Shrink the type, tighten padding, guarantee no horizontal
+   overflow, and ease the card overlap so text clears it.
+   ------------------------------------------------------------------ */
+@media (max-width: 767px) {
+  .home2-banner-section .banner-wrapper .banner-content-wrap {
+    padding: 70px 0;
+  }
+  .home2-banner-section .banner-wrapper .banner-content-wrap .banner-content {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+  .home2-banner-section .banner-wrapper .banner-content-wrap .banner-content h1,
+  .home2-banner-section .banner-wrapper .banner-content-wrap .banner-content h2 {
+    font-size: 34px;
+    line-height: 1.12;
+    margin-bottom: 12px;
+    overflow-wrap: break-word;
+  }
+  .filter-wrapper { margin-top: -56px; }
+}
+
+@media (max-width: 576px) {
+  .home2-banner-section .banner-wrapper .banner-content-wrap {
+    padding: 60px 0;
+  }
+  .home2-banner-section .banner-wrapper .banner-content-wrap .banner-content h1,
+  .home2-banner-section .banner-wrapper .banner-content-wrap .banner-content h2 {
+    font-size: 28px;
+  }
+  .home2-banner-section .banner-wrapper .banner-content-wrap .banner-content p {
+    font-size: 15px;
+    line-height: 23px;
+  }
+  .filter-wrapper { margin-top: -44px; }
+}
+
+/* Section-title highlight links (e.g. "Popular Treks in <a>Upcoming Treks</a>")
+   carry white-space:nowrap from style.css, so on narrow screens the link can't
+   break and pushes the page into horizontal scroll. Let it wrap; desktop still
+   fits on one line so the look is unchanged. */
+.section-title h2 a,
+.section-title h1 a { white-space: normal; overflow-wrap: break-word; }
