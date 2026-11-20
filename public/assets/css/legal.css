@@ -41,6 +41,28 @@
 .wanderon-table td { padding: 14px 16px; border-top: 1px solid #e5e7eb; vertical-align: top; }
 .wanderon-table tbody tr:nth-child(even) td { background: #fafafa; }
 .general-policy-content { border-top: 1px solid #eee; }
+
+.ag-guide.policy-guide { background: transparent; color: inherit; padding: 0; line-height: inherit; }
+.policy-guide .ag-jump {
+  position: sticky; top: 0; z-index: 5;
+  background: #fff; padding-top: 12px;
+}
+.policy-guide .ag-banner {
+  background: #fff8f0; color: inherit; border-left: 4px solid var(--primary-color1, #fe5100);
+  padding: 18px 22px; border-radius: 4px; margin-bottom: 30px; box-shadow: none;
+}
+.policy-guide .ag-banner strong { color: inherit; }
+.policy-guide .ag-section { border-top: 1px solid #eee; padding-top: 26px; margin-bottom: 28px; }
+.policy-guide .ag-section:last-child { margin-bottom: 0; }
+.policy-guide h2.ag-title { font-size: 20px; }
+.policy-guide .ag-sec-intro { margin: 8px 0 14px; }
+.policy-guide .ag-points { display: block; list-style: disc; padding-left: 20px; }
+.policy-guide .ag-points li,
+.policy-guide .ag-checklist li { background: transparent; border: 0; box-shadow: none; padding: 0; }
+.policy-guide table.ag-table thead th { background: #110f0f; }
+.policy-guide .ag-table-wrap { margin-bottom: 0; }
+.policy-guide .ag-rule { display: none; }
+
 @media (max-width: 767px) {
   .tc-wrapper, .wanderon-policy-wrapper { padding: 28px 18px; border-radius: 12px; }
   .tc-header h2, .policy-header-title h2 { font-size: 24px; }

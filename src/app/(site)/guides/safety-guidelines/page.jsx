@@ -2,14 +2,8 @@ import fs from "fs";
 import path from "path";
 import SafetyGuidelinesScripts from "@/components/SafetyGuidelinesScripts";
 
-const safetyHtml = fs.readFileSync(
-  path.join(process.cwd(), "src/data/orig-safety-guidelines.html"),
-  "utf8"
-);
-const safetyInit = fs.readFileSync(
-  path.join(process.cwd(), "src/data/safety-guidelines-init.js"),
-  "utf8"
-);
+const htmlPath = path.join(process.cwd(), "src/data/orig-safety-guidelines.html");
+const initPath = path.join(process.cwd(), "src/data/safety-guidelines-init.js");
 
 export const metadata = {
   title: "Safety Guidelines",
@@ -20,6 +14,8 @@ export const metadata = {
 
 // Serves the original safety-guidelines page body verbatim.
 export default function SafetyGuidelinesPage() {
+  const safetyHtml = fs.readFileSync(htmlPath, "utf8");
+  const safetyInit = fs.readFileSync(initPath, "utf8");
   return (
     <>
       <div

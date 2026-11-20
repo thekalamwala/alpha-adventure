@@ -2,14 +2,8 @@ import fs from "fs";
 import path from "path";
 import ResponsibleTravelScripts from "@/components/ResponsibleTravelScripts";
 
-const responsibleHtml = fs.readFileSync(
-  path.join(process.cwd(), "src/data/orig-responsible-travel.html"),
-  "utf8"
-);
-const responsibleInit = fs.readFileSync(
-  path.join(process.cwd(), "src/data/responsible-travel-init.js"),
-  "utf8"
-);
+const htmlPath = path.join(process.cwd(), "src/data/orig-responsible-travel.html");
+const initPath = path.join(process.cwd(), "src/data/responsible-travel-init.js");
 
 export const metadata = {
   title: "Responsible Travel",
@@ -20,6 +14,8 @@ export const metadata = {
 
 // Serves the original responsible-travel page body verbatim.
 export default function ResponsibleTravelPage() {
+  const responsibleHtml = fs.readFileSync(htmlPath, "utf8");
+  const responsibleInit = fs.readFileSync(initPath, "utf8");
   return (
     <>
       <div

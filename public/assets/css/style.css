@@ -2649,14 +2649,14 @@ body.tt-magic-cursor #magic-cursor {
 }
 
 .topbar-area .topbar-wrap .header-logo img {
-  min-width: 120px;
-  max-width: 120px;
+  width: 64px;
+  height: auto;
+  border-radius: 6px;
 }
 
 @media (min-width: 992px) and (max-width: 1199px) {
   .topbar-area .topbar-wrap .header-logo img {
-    max-width: 100px;
-    min-width: 100px;
+    width: 56px;
   }
 }
 
@@ -3272,18 +3272,20 @@ header.style-1.sticky {
 }
 
 header.style-1 .header-logo img {
-  width: 120px;
+  width: 64px;
+  height: auto;
+  border-radius: 6px;
 }
 
 @media (max-width: 991px) {
   header.style-1 .header-logo img {
-    width: 110px;
+    width: 44px;
   }
 }
 
 @media (max-width: 576px) {
   header.style-1 .header-logo img {
-    width: 100px;
+    width: 40px;
   }
 }
 
@@ -4612,7 +4614,15 @@ header.style-1 .main-menu>ul li.menu-item-has-children>i {
 }
 
 header.style-1 .mobile-logo-area .mobile-logo-wrap img {
-  width: 110px;
+  width: 56px;
+  height: auto;
+  border-radius: 6px;
+}
+
+.footer-logo img[src$="/logo/logo.png"] {
+  width: 108px;
+  height: auto;
+  border-radius: 8px;
 }
 
 header.style-1 .mobile-logo-area .menu-close-btn {

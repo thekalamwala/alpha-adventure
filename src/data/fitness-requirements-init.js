@@ -11,8 +11,6 @@
     if (!links.length) return;
     var ids = links.map(function (a) { return (a.getAttribute('href') || '').replace('#', ''); });
     var targets = ids.map(function (id) { return document.getElementById(id); }).filter(Boolean);
-    var OFFSET = 90;
-
     function setActive(id) {
       links.forEach(function (a) { a.classList.toggle('active', a.getAttribute('href') === '#' + id); });
     }
@@ -23,7 +21,8 @@
         var el = document.getElementById(id);
         if (!el) return;
         e.preventDefault();
-        var y = el.getBoundingClientRect().top + window.pageYOffset - OFFSET;
+        var offset = nav.offsetHeight + 12;
+        var y = el.getBoundingClientRect().top + window.pageYOffset - offset;
         window.scrollTo({ top: y, behavior: 'smooth' });
         history.replaceState(null, '', '#' + id);
       });

@@ -13,58 +13,59 @@
     </div>
     <!-- Breadcrumb section End-->
 
-    <link rel="stylesheet" href="/assets/css/guides.css?v=1">
+    <link rel="stylesheet" href="/assets/css/guides.css?v=3">
 
-    <div class="ag-guide">
-        <div class="wrap">
-            <p class="ag-lede">This page follows the packing lists we send to travellers once they register. Pick your trip type and your season, and the list changes to match. Tick items off as you pack, and print a copy if you like. Items needed only in some seasons carry a note in brackets, for example (Required in winter). Items marked Recommended or Optional are our extra suggestions on top of the list we send you.</p>
-
-            <div class="ag-banner">
-                <strong>Pack for the trip you are taking, not for every "what if".</strong> Every extra item is weight you carry up and down the trail. If your trek leader or trip captain sends a list for your specific trip, follow that one first.
-            </div>
-
+    <div class="ag-guide packing-guide">
+        <div class="container">
             <noscript><div class="ag-callout">This checklist needs JavaScript to work. Please turn it on, or message us on WhatsApp and we will send you the list.</div></noscript>
 
-            <section class="ag-panel" aria-label="Choose your trip">
-                <div class="group">
-                    <p class="step">Step 1</p>
-                    <h2>Choose your trip type</h2>
-                    <div class="ag-tabs" id="tabs" role="group" aria-label="Trip type"></div>
+            <div class="packing-grid">
+            <aside class="packing-sidebar" aria-label="Checklist tools">
+            <section class="ag-panel" aria-labelledby="packing-progress-title">
+                <div class="ag-progress-row">
+                    <h2 id="packing-progress-title">Your Progress</h2>
+                    <span class="pct" id="pct">0%</span>
                 </div>
+                <p class="ag-helper" id="cnt" aria-live="polite">0 of 0 packed</p>
+            </section>
+            <section class="ag-panel" aria-labelledby="packing-print-title">
+                <h2 id="packing-print-title">Print Details</h2>
+                <div class="ag-fields">
+                    <div><label for="fName">Trekker Name</label><input id="fName" type="text" autocomplete="name" placeholder="Your Name"></div>
+                    <div><label for="fTrip">Trek Name</label><input id="fTrip" type="text" placeholder="e.g. Kedarkantha Trek"></div>
+                    <div><label for="fDate">Departure Date</label><input id="fDate" type="text" placeholder="e.g. Dec 25, 2026"></div>
+                </div>
+                <p class="ag-helper"><i class="bi bi-info-circle" aria-hidden="true"></i> These details will appear at the top of the printed checklist sheet.</p>
+            </section>
+
+            <section class="ag-panel" aria-label="Filters and search">
+                <h2>Filters &amp; Search</h2>
+                <label class="visually-hidden" for="packingSearch">Search packing items</label>
+                <div class="packing-search-field"><i class="bi bi-search" aria-hidden="true"></i><input class="packing-search" type="search" id="packingSearch" placeholder="Search items…"></div>
                 <div class="group">
-                    <p class="step">Step 2</p>
-                    <h2>Choose your season</h2>
+                    <p class="packing-filter-label">Trek season / type</p>
                     <div class="ag-chips" id="seasonChips" role="group" aria-label="Season"></div>
                     <p class="ag-helper" id="seasonHelp">Summer and Pre Monsoon is March, April, May and early June. Monsoon is mid June, July, August and September. Post Monsoon is October and November. Winter is December, January and February. If your dates fall between two seasons, ask us before you buy anything.</p>
-                </div>
-                <div class="group" id="terrainWrap" hidden>
-                    <p class="step">Step 3</p>
-                    <h2>Choose your backpacking trip</h2>
-                    <div class="ag-chips" id="terrainChips" role="group" aria-label="Backpacking trip"></div>
-                    <p class="ag-helper">Only trips we have a packing list for are shown here. For any other backpacking trip, we send you the list once you register. You can also message us on WhatsApp.</p>
                 </div>
                 <div class="ag-note-box" id="seasonNote" hidden></div>
                 <div class="ag-note-box" id="terrainNote" hidden></div>
             </section>
 
-            <section class="ag-panel" aria-label="Your progress">
-                <div class="ag-progress-row">
-                    <span class="pct" id="pct">0%</span>
-                    <span class="cnt" id="cnt">0 of 0 packed</span>
+                <div class="ag-btn-row packing-actions">
+                    <button class="ag-btn primary" id="btnPrint" type="button"><i class="bi bi-printer-fill" aria-hidden="true"></i> Print Checklist</button>
+                    <button class="ag-btn ghost" id="btnReset" type="button"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i> Reset Checklist</button>
                 </div>
-                <div class="ag-bar" aria-hidden="true"><span id="fill"></span></div>
-                <div class="ag-fields">
-                    <div><label for="fName">Trekker name</label><input id="fName" type="text" autocomplete="name"></div>
-                    <div><label for="fTrip">Trek or trip name</label><input id="fTrip" type="text"></div>
-                    <div><label for="fDate">Departure date</label><input id="fDate" type="date"></div>
-                </div>
-                <p class="ag-helper">These details appear at the top of the printed sheet.</p>
-                <div class="ag-btn-row">
-                    <button class="ag-btn primary" id="btnPrint" type="button">Print checklist</button>
-                    <button class="ag-btn ghost" id="btnReset" type="button">Reset this list</button>
-                </div>
-            </section>
+                <details class="ag-panel packing-trip-lists">
+                    <summary>Trip-specific checklists</summary>
+                    <div class="ag-tabs" id="tabs" role="group" aria-label="Trip type"></div>
+                    <div class="group" id="terrainWrap" hidden>
+                        <h2>Choose your backpacking trip</h2>
+                        <div class="ag-chips" id="terrainChips" role="group" aria-label="Backpacking trip"></div>
+                    </div>
+                </details>
+            </aside>
 
+            <div class="packing-content">
             <div class="ag-print-head" id="printHead">
                 <h2>Alpha Adventures: Packing Checklist</h2>
                 <p id="phType"></p>
@@ -75,15 +76,20 @@
             <p class="ag-cat-intro" id="catIntro"></p>
 
             <div id="lists"></div>
+            <p id="packingNoResults" hidden>No packing items match your search.</p>
 
             <div class="ag-avoid" id="avoid"></div>
 
-            <h2 class="ag-title noprint" style="margin:8px 0 14px;">Before you go</h2>
+            <div id="packingRelated" class="noprint">
+            <h2 class="ag-title" style="margin:8px 0 14px;">Before you go</h2>
             <div class="ag-linkgrid noprint">
                 <a href="/guides/safety-guidelines"><span class="lt">Safety Guidelines</span><span class="ld">How we manage safety, and what we ask of every traveller.</span></a>
                 <a href="/guides/fitness-requirements"><span class="lt">Fitness Requirements</span><span class="ld">What to train for your trek, and how long it takes.</span></a>
                 <a href="/guides/beginner-trek-guide"><span class="lt">Beginner Trek Guide</span><span class="ld">New to trekking? Start here.</span></a>
                 <a href="/guides/responsible-travel"><span class="lt">Responsible Travel</span><span class="ld">How to leave the places you visit as you found them.</span></a>
+            </div>
+            </div>
+            </div>
             </div>
         </div>
     </div>

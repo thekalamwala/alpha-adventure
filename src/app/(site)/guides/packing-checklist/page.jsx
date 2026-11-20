@@ -2,14 +2,8 @@ import fs from "fs";
 import path from "path";
 import PackingChecklistScripts from "@/components/PackingChecklistScripts";
 
-const packingHtml = fs.readFileSync(
-  path.join(process.cwd(), "src/data/orig-packing-checklist.html"),
-  "utf8"
-);
-const packingInit = fs.readFileSync(
-  path.join(process.cwd(), "src/data/packing-checklist-init.js"),
-  "utf8"
-);
+const packingHtmlPath = path.join(process.cwd(), "src/data/orig-packing-checklist.html");
+const packingInitPath = path.join(process.cwd(), "src/data/packing-checklist-init.js");
 
 export const metadata = {
   title: "Packing Checklist",
@@ -20,6 +14,8 @@ export const metadata = {
 
 // Serves the original packing-checklist page body verbatim.
 export default function PackingChecklistPage() {
+  const packingHtml = fs.readFileSync(packingHtmlPath, "utf8");
+  const packingInit = fs.readFileSync(packingInitPath, "utf8");
   return (
     <>
       <div
