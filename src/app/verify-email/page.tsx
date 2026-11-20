@@ -17,7 +17,7 @@ export default async function VerifyEmailPage(props: { searchParams: Promise<{ t
   }
   return (
     <AuthLayout>
-      <p className="mb-4 text-lg font-bold text-ink">{ok ? "Email confirmed ✓" : "Link invalid or expired"}</p>
+      <h1 className="mb-4 text-lg font-bold text-ink">{ok ? "Email confirmed ✓" : "Link invalid or expired"}</h1>
       <p className="text-sm text-gray-500">
         {ok ? "Thanks — your email is verified." : "This confirmation link didn't work. You can still use your account."}
       </p>

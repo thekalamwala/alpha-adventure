@@ -8,6 +8,7 @@ export type ListingTrek = {
   slug: string;
   title: string;
   location: string | null;
+  state?: string | null;
   duration: string | null;
   price: number; // rupees
   badge: string | null;
@@ -24,7 +25,7 @@ export async function getListingTreks(): Promise<ListingTrek[]> {
   const supabase = publicClient();
   const { data } = await supabase
     .from("treks")
-    .select("slug,title,location,duration_label,base_price,badge,hero_image,group,tags,featured")
+    .select("slug,title,location,state,duration_label,base_price,badge,hero_image,group,tags,featured")
     .eq("status", "published")
     .is("deleted_at", null)
     .order("title");
@@ -33,6 +34,7 @@ export async function getListingTreks(): Promise<ListingTrek[]> {
     slug: t.slug,
     title: t.title,
     location: t.location,
+    state: t.state,
     duration: t.duration_label,
     price: Math.round((t.base_price ?? 0) / 100),
     badge: t.badge,

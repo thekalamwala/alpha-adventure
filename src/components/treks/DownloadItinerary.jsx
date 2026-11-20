@@ -1,9 +1,11 @@
 "use client";
 
+import { trekAboutText } from "@/lib/trekAbout";
+
 // Small sidebar button: downloads the official brochure when one is uploaded
 // (`brochure_url`), otherwise generates a plain-text itinerary from the day
 // rows so the button always does something useful.
-export default function DownloadItinerary({ trek, itinerary }) {
+export default function DownloadItinerary({ trek, itinerary, label = "Download Brochure" }) {
   const hasDays = Array.isArray(itinerary) && itinerary.length > 0;
 
   const generate = () => {
@@ -33,7 +35,7 @@ export default function DownloadItinerary({ trek, itinerary }) {
         d.meals && `Meals: ${d.meals}`,
       ].filter(Boolean);
       for (const m of metrics) lines.push(`  ${m}`);
-      if (d.description) lines.push("", `  ${d.description}`);
+      if (d.description) lines.push("", `  ${trekAboutText(d.description)}`);
     }
 
     lines.push("", "— Alpha Adventures | alphaadventures.in");
@@ -60,7 +62,7 @@ export default function DownloadItinerary({ trek, itinerary }) {
   if (trek.brochure_url) {
     return (
       <a href={trek.brochure_url} download className={cls}>
-        <i className="bi bi-download" /> Download Brochure
+        <i className="bi bi-download" /> {label}
       </a>
     );
   }

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { istToday } from "@/lib/date";
+import { getGoogleReviewSettings } from "@/lib/getGoogleReviewSettings";
 
 // Statuses that count as money in (mirrors user-dashboard).
 const PAID = new Set(["confirmed", "deposit_paid", "completed"]);
@@ -43,7 +44,7 @@ function ago(iso: string) {
 export async function getAdminData() {
   const { admin } = await requireAdmin();
 
-  const [bookingsRes, leadsRes, paymentsRes, profilesRes, departuresRes, treksRes, toursRes, galleryRes, testimonialsRes, postsRes] = await Promise.all([
+  const [bookingsRes, leadsRes, paymentsRes, profilesRes, departuresRes, treksRes, toursRes, galleryRes, testimonialsRes, postsRes, googleReviews] = await Promise.all([
     admin.from("bookings")
       .select("id,reference,contact_name,contact_email,user_id,trek_title,departure_date,seats,grand_total,amount_paid,balance_due,balance_due_date,status,created_at,team_members(name)")
       .order("created_at", { ascending: false }),
@@ -69,6 +70,7 @@ export async function getAdminData() {
     admin.from("posts")
       .select("slug,title,status,published_at,trek_id,created_at").is("deleted_at", null)
       .order("created_at", { ascending: false }).limit(200),
+    getGoogleReviewSettings(),
   ]);
 
   const bookings = bookingsRes.data ?? [];
@@ -253,6 +255,7 @@ export async function getAdminData() {
 
   return {
     kpis,
+    googleReviews,
     bookingRows,
     leadRows,
     paymentRows,

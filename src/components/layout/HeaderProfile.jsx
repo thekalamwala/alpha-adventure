@@ -17,9 +17,12 @@ export default function HeaderProfile() {
   useEffect(() => {
     const supabase = createClient();
     let live = true;
+    let request = 0;
+    let refreshTimer;
     const cleanups = [];
 
     async function load() {
+      const current = ++request;
       let user = null, name = "", email = "";
       try {
         const { data } = await supabase.auth.getUser();
@@ -31,28 +34,26 @@ export default function HeaderProfile() {
           name = [p?.first_name, p?.last_name].filter(Boolean).join(" ");
         }
       } catch { /* treat as signed out */ }
-      if (!live) return;
+      if (!live || current !== request) return;
+      cleanups.splice(0).forEach((fn) => fn());
       render(user, name, email);
     }
 
     function render(user, name, email) {
       const buttons = document.querySelectorAll("a.primary-btn1.four.transparent");
       buttons.forEach((btn) => {
-        if (btn.dataset.aaProfile) return;
-        btn.dataset.aaProfile = "1";
-
         const wrap = document.createElement("div");
         wrap.className = "aa-profile";
+        btn.replaceWith(wrap);
+        cleanups.push(() => wrap.replaceWith(btn));
 
         if (!user) {
           wrap.innerHTML = `<a href="/login" class="aa-profile-avatar" aria-label="Log in"><i class="bi bi-person"></i></a>`;
-          btn.replaceWith(wrap);
           return;
         }
 
         const initials = (name || email || "A").trim().slice(0, 1).toUpperCase();
         wrap.innerHTML = `<button type="button" class="aa-profile-avatar" aria-label="Account" aria-haspopup="menu">${esc(initials)}</button>`;
-        btn.replaceWith(wrap);
         const avatar = wrap.querySelector(".aa-profile-avatar");
 
         // Dropdown lives on <body> so the header's stacking context can't hide it.
@@ -99,14 +100,13 @@ export default function HeaderProfile() {
 
     load();
     const { data: sub } = supabase.auth.onAuthStateChange(() => {
-      document.querySelectorAll(".aa-profile-menu").forEach((el) => el.remove());
-      document.querySelectorAll(".aa-profile").forEach((el) => el.remove());
-      document.querySelectorAll("[data-aa-profile]").forEach((el) => delete el.dataset.aaProfile);
-      load();
+      clearTimeout(refreshTimer);
+      refreshTimer = setTimeout(load, 0);
     });
 
     return () => {
       live = false;
+      clearTimeout(refreshTimer);
       sub.subscription.unsubscribe();
       cleanups.forEach((fn) => fn());
     };

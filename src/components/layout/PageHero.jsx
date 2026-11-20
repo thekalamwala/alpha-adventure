@@ -45,7 +45,7 @@ export default function PageHero({ title, crumb, subtitle, image = img("innerpag
             </>
           )}
         </nav>
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white">{title}</h1>
+        <h1 className="page-hero-title text-white">{title}</h1>
         {subtitle && <p className="mt-4 text-white/85 max-w-2xl mx-auto">{subtitle}</p>}
       </div>
     </section>

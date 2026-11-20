@@ -21,10 +21,10 @@ const templateCss = [
   "slick-theme.css",
   "daterangepicker.css",
   "boxicons.min.css",
-  "style.css?v=1786605966",
+  "style.css?v=1786605969",
   "card-custom.css",
   "search.css?v=1786605966",
-  "site-overrides.css?v=1",
+  "site-overrides.css?v=3",
 ];
 
 export default function SiteLayout({ children }) {

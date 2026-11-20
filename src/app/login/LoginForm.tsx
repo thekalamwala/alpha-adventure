@@ -100,11 +100,11 @@ export default function LoginForm({
 
   return (
     <div>
-      <p className="mb-6 text-lg font-bold">
+      <div className="mb-6 text-lg font-bold">
         <Link href="/" className="text-primary hover:underline">Homepage</Link>
         <span className="mx-2 text-gray-300">\\</span>
-        <span className="text-ink">{heading ?? (isRegister ? "Create your account" : "Welcome back!")}</span>
-      </p>
+        <h1 className="inline text-lg font-bold text-ink">{heading ?? (isRegister ? "Create your account" : "Welcome back!")}</h1>
+      </div>
 
       <ProgressBar active={busy} />
 

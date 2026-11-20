@@ -9,6 +9,7 @@ import { createClient } from "@/utils/supabase/client";
 import { resolveCharge } from "@/domain/booking/pricing";
 import type { CheckoutOrder } from "@/domain/booking/razorpayPayment";
 import { noticeText, type PaymentNotice } from "@/domain/booking/paymentNotice";
+import { site } from "@/data/site";
 
 type Trek = { id: string; slug: string; title: string; summary: string | null; base_price: number; child_price: number | null; place: string; deposit_type: "none" | "percent" | "flat"; deposit_value: number; balance_due_offset_days: number };
 type Departure = { id: string; start_date: string; end_date: string | null; capacity: number; booked_seats: number; price_override: number | null };
@@ -54,6 +55,7 @@ function loadRazorpay(): Promise<void> {
 export type PayMode = { provider: "razorpay" | "phonepe" | "mock"; testMode: boolean };
 
 export default function BookingFlow({ trek, departures, addons, payMode, user, teamMembers, boardingLocations, boardingDisclaimer, paymentNotice = null }: { paymentNotice?: PaymentNotice | null; trek: Trek; departures: Departure[]; addons: Addon[]; payMode: PayMode; user: { email: string } | null; teamMembers: TeamMember[]; boardingLocations: Boarding[]; boardingDisclaimer: string | null }) {
+  const boardingNotice = boardingDisclaimer?.trim();
   const [step, setStep] = useState(0);
   const [departureId, setDepartureId] = useState("");
   const [adults, setAdults] = useState(1);
@@ -288,7 +290,17 @@ export default function BookingFlow({ trek, departures, addons, payMode, user, t
         <div className="bk-brand">
           <span className="bk-ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M3 20L9 8l4 7 2-3 6 8z" fill="#fe5100" /><path d="M9 8l4 7-2.4 5H3z" fill="#ff8a4d" /><circle cx="17" cy="6" r="2.2" fill="#FFB52A" /></svg></span>
           <div><h1>{trek.title}</h1>{trek.summary ? <p>{trek.summary}</p> : null}</div>
-          <div className="bk-help"><svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth={2}><path d="M4 5h4l2 5-3 2a12 12 0 006 6l2-3 5 2v4a2 2 0 01-2 2A18 18 0 013 7a2 2 0 012-2z" /></svg><span>Need help?<br /><b>+91 8180001597</b></span></div>
+          <div className="bk-help">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth={2}><path d="M4 5h4l2 5-3 2a12 12 0 006 6l2-3 5 2v4a2 2 0 01-2 2A18 18 0 013 7a2 2 0 012-2z" /></svg>
+            <div>
+              Need help?
+              <div className="bk-help-phones">
+                <a href={`tel:${site.phone.replace(/[^+\d]/g, "")}`}>{site.phone}</a>
+                <span aria-hidden="true">|</span>
+                <a href={`tel:${site.secondaryPhone.replace(/[^+\d]/g, "")}`}>{site.secondaryPhone}</a>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="bk-stepper">
@@ -320,11 +332,13 @@ export default function BookingFlow({ trek, departures, addons, payMode, user, t
             {step === 1 && hasB && (
               <Panel eyebrow={`Step ${stepNo(1)} of ${stepTotal}`} title="Choose your boarding point" desc="Where would you like to join the trek? Priced per traveller.">
                 {/* ponytail: display-only; add an ack checkbox only if the client later asks */}
-                {boardingDisclaimer && <div className="bk-note"><InfoIcon /> {boardingDisclaimer}</div>}
-                <div className="bk-note"><InfoIcon /> <span>Pickup charges are non-refundable as per our <a href="/cancellation-policy" target="_blank" rel="noreferrer">cancellation policy</a>{boarding ? <> — {rupees(boarding.price * pax)} for your {pax} traveller{pax > 1 ? "s" : ""}.</> : <> (the amount for your group is shown once you pick a point).</>}</span></div>
+                <div className="bk-boarding-notices">
+                  {boardingNotice && !/^lorem ipsum\b/i.test(boardingNotice) && <div className="bk-note"><InfoIcon /> <span>{boardingNotice}</span></div>}
+                  <div className="bk-note"><InfoIcon /> <span>Pickup charges are non-refundable under our <a href="/cancellation-policy" target="_blank" rel="noreferrer">cancellation policy</a>. {boarding ? `Total pickup charge for your group: ${rupees(boarding.price * pax)}.` : "Select a boarding point to see your group’s pickup charge."}</span></div>
+                </div>
                 {boardingLocations.map((b) => (
                   <button key={b.id} type="button" className="bk-opt" aria-checked={boardingId === b.id} onClick={() => { setBoardingId(b.id); resetDraft(); }}>
-                    <span className="bk-radio" /><span className="bk-m"><div className="bk-lead">{b.name}</div>{b.subtext && <div className="bk-tiny">{b.subtext}</div>}</span><span className="bk-price">{rupees(b.price)}</span>
+                    <span className="bk-radio" /><span className="bk-m"><div className="bk-lead">{b.name}</div>{b.subtext?.trim() && b.subtext.trim().toLowerCase() !== b.name.trim().toLowerCase() && <div className="bk-tiny">{b.subtext}</div>}</span><span className="bk-price">{rupees(b.price)}</span>
                   </button>
                 ))}
                 <Foot back={{ onClick: () => go(0) }} next={{ label: "Continue", onClick: () => go(2), disabled: !boardingId }} />
@@ -396,20 +410,21 @@ export default function BookingFlow({ trek, departures, addons, payMode, user, t
             )}
             {step === 5 && pay === "pay" && (
               <Panel eyebrow={`Step ${stepNo(5)} of ${stepTotal}`} title="Confirm & pay" desc="Your seats are held for 30 minutes.">
-                <div className="bk-opt" aria-checked="true"><span className="bk-radio" /><span className="bk-m">
-                  <div className="bk-lead">{payMode.provider === "phonepe" ? "PhonePe · UPI · Card" : "UPI · Cards · Netbanking · Wallets"}</div>
-                  <div className="bk-tiny">{payMode.testMode ? "Test mode — no real money is charged" : payMode.provider === "razorpay" ? "Secure payment by Razorpay" : "Secure payment"}</div>
-                </span></div>
+                {payMode.testMode && <p className="bk-tiny">Test mode — no real money is charged</p>}
                 {allowsDeposit && (<>
                   <button type="button" className="bk-opt" aria-checked={payChoice === "full"} onClick={() => setPayChoice("full")}>
-                    <span className="bk-radio" /><span className="bk-m"><div className="bk-lead">Pay full</div><div className="bk-tiny">Pay the whole amount now</div></span><span className="bk-price">{rupees(total)}</span>
+                    <span className="bk-radio" /><span className="bk-m"><div className="bk-lead">Pay full amount now</div></span><span className="bk-price">{rupees(total)}</span>
                   </button>
-                  <button type="button" className="bk-opt" aria-checked={payChoice === "deposit"} onClick={() => setPayChoice("deposit")}>
-                    <span className="bk-radio" /><span className="bk-m"><div className="bk-lead">Pay deposit now</div><div className="bk-tiny">{rupees(balanceAmount)} due{balanceDueDate ? ` by ${balanceDueDate}` : ""}</div></span><span className="bk-price">{rupees(depositAmount)}</span>
+                  <button type="button" className="bk-opt bk-opt-col" aria-checked={payChoice === "deposit"} onClick={() => setPayChoice("deposit")}>
+                    <span className="bk-opt-head"><span className="bk-radio" /><span className="bk-m"><div className="bk-lead">Book now &amp; pay remaining amount later</div></span></span>
+                    <span className="bk-breakdown">
+                      <span className="bk-srow"><span>Pay to book</span><span>{rupees(depositAmount)}</span></span>
+                      <span className="bk-srow"><span>Pay due amount{balanceDueDate ? ` before ${balanceDueDate}` : ""}</span><span>{rupees(balanceAmount)}</span></span>
+                    </span>
                   </button>
                 </>)}
                 {(payingDeposit || boarding) && <div className="bk-note"><InfoIcon /> <span>Non-refundable as per our <a href="/cancellation-policy" target="_blank" rel="noreferrer">cancellation policy</a>: {[payingDeposit && `your ${rupees(depositAmount)} deposit`, boarding && `the ${rupees(boarding.price * pax)} pickup charge`].filter(Boolean).join(" and ")}.{payingDeposit ? ` The ${rupees(balanceAmount)} balance is due${balanceDueDate ? ` by ${balanceDueDate}` : ""}.` : ""}</span></div>}
-                <div className="bk-pfoot"><span /><button className="bk-btn bk-btn-primary" disabled={busy} aria-busy={busy} onClick={() => doPay(allowsDeposit ? payChoice : "full")}>{verifying ? "Confirming payment…" : busy ? "Processing…" : `Pay ${payingDeposit ? "deposit " : ""}${rupees(payingDeposit ? depositAmount : total)}`}</button></div>
+                <button className="bk-btn bk-btn-primary bk-btn-block" disabled={busy} aria-busy={busy} onClick={() => doPay(allowsDeposit ? payChoice : "full")}>{verifying ? "Confirming payment…" : busy ? "Processing…" : `Pay ${payingDeposit ? "deposit " : ""}${rupees(payingDeposit ? depositAmount : total)}`}</button>
               </Panel>
             )}
 

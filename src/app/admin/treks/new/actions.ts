@@ -1,5 +1,7 @@
 "use server";
 
+import { maxItineraryPhotos, saveItineraryPhotos } from "@/lib/itineraryPhotos";
+
 import { revalidatePublicTrek } from "@/lib/revalidateTrek";
 import { z } from "zod";
 import { requireAdmin } from "@/app/admin/data";
@@ -66,7 +68,7 @@ const trekSchema = z.object({
   itinerary: z.array(z.object({
     title: z.string().trim().min(1),
     description: z.string().trim().optional().or(z.literal("")),
-    image: z.string().trim().optional().or(z.literal("")),
+    image: z.union([z.string().trim(), z.array(z.string().trim()).max(maxItineraryPhotos, "An itinerary day can have up to two photos.")]).optional(),
     trek_distance: z.string().trim().max(60).optional().or(z.literal("")),
     trek_duration: z.string().trim().max(60).optional().or(z.literal("")),
     drive_distance: z.string().trim().max(60).optional().or(z.literal("")),
@@ -189,7 +191,7 @@ export async function createTrek(raw: unknown): Promise<Result> {
   if (t.itinerary.length) {
     jobs.push(admin.from("itinerary_days").insert(
       t.itinerary.map((d, i) => ({
-        trek_id: trek.id, day_no: i + 1, title: d.title, description: blank(d.description), image: blank(d.image),
+        trek_id: trek.id, day_no: i + 1, title: d.title, description: blank(d.description), image: saveItineraryPhotos(d.image),
         trek_distance: blank(d.trek_distance), trek_duration: blank(d.trek_duration),
         drive_distance: blank(d.drive_distance), drive_duration: blank(d.drive_duration),
         altitude_gain: blank(d.altitude_gain), altitude_loss: blank(d.altitude_loss), meals: blank(d.meals),

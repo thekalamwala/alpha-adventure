@@ -15,6 +15,7 @@ const esc = (s) =>
 // parameterized by slug. Structure matches the site verbatim (CSS classes,
 // lightbox markup, data-season hooks) so the shared init script works unchanged.
 export function galleryDetailHtml(page) {
+  const activeSeason = page.seasons.find((season) => season.images.length)?.id ?? page.seasons[0]?.id;
   const seasonPanels = page.seasons
     .map((season) => {
       const hiddenIdx = new Set();
@@ -30,20 +31,20 @@ export function galleryDetailHtml(page) {
         .join("\n                ");
 
       return `        <!-- ─────── ${season.label.toUpperCase()} ─────── -->
-        <section class="gd-panel${season.id === "summer" ? " active" : ""}" id="panel-${season.id}">
+        <section class="gd-panel${season.id === activeSeason ? " active" : ""}" id="panel-${season.id}">
             <div class="gd-panel-head">
                 <span class="gd-label">${esc(season.label)}</span>
                 <h2 class="gd-heading">${esc(season.label)}</h2>
                 <p class="gd-subtext">${esc(season.sub)}</p>
                 <div class="gd-accent-line"></div>
             </div>
-            <div class="gd-grid gd-grid--${season.id}" id="grid-${season.id}">
+            ${items ? `<div class="gd-grid gd-grid--${season.id}" id="grid-${season.id}">
                 ${items}
-            </div>
-            <div class="gd-cta-wrap">
+            </div>` : `<p class="text-center text-gray-600">No photos for ${esc(season.label.toLowerCase())} yet.</p>`}
+            ${season.images.length > VISIBLE_INITIAL ? `<div class="gd-cta-wrap">
                 <button class="gd-view-btn" data-season="${season.id}">View All ${esc(season.label)} Photos <i class="bi bi-arrow-right"></i></button>
                 <button class="gd-less-btn" data-season="${season.id}" style="display:none;">Show Less &uarr;</button>
-            </div>
+            </div>` : ""}
         </section>`;
     })
     .join("\n\n");
@@ -51,7 +52,7 @@ export function galleryDetailHtml(page) {
   const tabs = page.seasons
     .map(
       (season) =>
-        `<button class="gd-tab${season.id === "summer" ? " active" : ""}" data-season="${season.id}"><i class="bi ${season.icon}"></i> ${esc(season.label)}</button>`
+        `<button class="gd-tab${season.id === activeSeason ? " active" : ""}" data-season="${season.id}"><i class="bi ${season.icon}"></i> ${esc(season.label)}</button>`
     )
     .join("\n                ");
 

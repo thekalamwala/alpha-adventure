@@ -2,7 +2,8 @@
   'use strict';
 
   var VISIBLE_INITIAL = 8;
-  var currentSeason = 'summer';
+  var activeTab = document.querySelector('.gd-tab.active');
+  var currentSeason = activeTab ? activeTab.getAttribute('data-season') : 'summer';
   var lbPhotos = [];
   var lbIndex = 0;
 

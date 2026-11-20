@@ -1,16 +1,18 @@
 /* Site overrides, loaded last for every (site) page.
    -------------------------------------------------------------------------
-   Inner-page hero titles: match the corporate / about hero H1 style
-   (Poppins 700, Bootstrap display-4 size, tight line-height).
-   The homepage hero uses .banner-content WITHOUT a .breadcrumb-section
-   ancestor, so it is intentionally left untouched. PageHero (React) and the
-   corporate/about heroes are already display-4 fw-bold, so they are unaffected. */
+   Hero titles follow the Corporate Programmes display-4 type scale. */
+.page-hero-title,
+.home2-banner-section .banner-content :is(h1, h2),
 .breadcrumb-section .banner-content h1 {
+  font-family: var(--font-poppins);
   font-weight: 700 !important;
-  line-height: 1.2 !important;
+  line-height: 1.25 !important;
   font-size: calc(1.475rem + 2.7vw) !important;
+  overflow-wrap: anywhere;
 }
 @media (min-width: 1200px) {
+  .page-hero-title,
+  .home2-banner-section .banner-content :is(h1, h2),
   .breadcrumb-section .banner-content h1 {
     font-size: 3.5rem !important;
   }
@@ -44,9 +46,8 @@
    Mobile homepage hero fix. The home2 banner has a fixed height
    (470px ≤576), absolutely-positioned content, and the search card
    (.filter-wrapper) pulled up -110px over it. On narrow phones the
-   big H1 wrapped to the screen edges and the subtext fell under the
-   card. Shrink the type, tighten padding, guarantee no horizontal
-   overflow, and ease the card overlap so text clears it.
+   heading wrapped to the screen edges and the subtext fell under the
+   card. Keep the content inset and ease the search form overlap.
    ------------------------------------------------------------------ */
 @media (max-width: 767px) {
   .home2-banner-section .banner-wrapper .banner-content-wrap {
@@ -58,10 +59,7 @@
   }
   .home2-banner-section .banner-wrapper .banner-content-wrap .banner-content h1,
   .home2-banner-section .banner-wrapper .banner-content-wrap .banner-content h2 {
-    font-size: 34px;
-    line-height: 1.12;
     margin-bottom: 12px;
-    overflow-wrap: break-word;
   }
   .filter-wrapper { margin-top: -56px; }
 }
@@ -69,10 +67,6 @@
 @media (max-width: 576px) {
   .home2-banner-section .banner-wrapper .banner-content-wrap {
     padding: 60px 0;
-  }
-  .home2-banner-section .banner-wrapper .banner-content-wrap .banner-content h1,
-  .home2-banner-section .banner-wrapper .banner-content-wrap .banner-content h2 {
-    font-size: 28px;
   }
   .home2-banner-section .banner-wrapper .banner-content-wrap .banner-content p {
     font-size: 15px;
@@ -87,3 +81,13 @@
    fits on one line so the look is unchanged. */
 .section-title h2 a,
 .section-title h1 a { white-space: normal; overflow-wrap: break-word; }
+
+.footer-section .footer-contact-wrap .contact-area {
+  gap: 24px;
+}
+
+@media (max-width: 1399px) {
+  .footer-section .footer-contact-wrap .contact-area .single-contact .content a {
+    font-size: clamp(12px, 3.8vw, 17px);
+  }
+}

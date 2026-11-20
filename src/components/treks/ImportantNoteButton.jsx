@@ -50,7 +50,7 @@ export default function ImportantNoteButton({ notes = [] }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl2 border border-line/70 px-4 py-3 text-sm font-semibold text-ink transition hover:border-primary hover:text-primary"
+        className="mt-4 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-full border border-[#a6bdaa] px-4 py-2 text-sm font-semibold text-[#18382b] transition hover:bg-white/70 hover:text-[#315e46]"
       >
         <i className="bi bi-info-circle" /> Important Note
       </button>

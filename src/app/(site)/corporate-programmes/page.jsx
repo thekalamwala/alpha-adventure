@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import ProgrammePageBody from "@/components/layout/ProgrammePageBody";
 
 const corporateHtml = fs.readFileSync(
   path.join(process.cwd(), "src/data/orig-corporate-programmes.html"),
@@ -15,10 +16,5 @@ export const metadata = {
 
 // Serves the corporate-programmes page body verbatim.
 export default function CorporateProgrammesPage() {
-  return (
-    <div
-      suppressHydrationWarning
-      dangerouslySetInnerHTML={{ __html: corporateHtml }}
-    />
-  );
+  return <ProgrammePageBody html={corporateHtml} />;
 }

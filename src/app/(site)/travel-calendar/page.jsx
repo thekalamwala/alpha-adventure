@@ -3,6 +3,7 @@ import path from "path";
 import TravelCalendarScripts from "@/components/TravelCalendarScripts";
 import { publicClient } from "@/lib/seo";
 import { canonicalPath } from "@/lib/sections";
+import { istToday } from "@/lib/date";
 
 export const revalidate = 300;
 
@@ -28,10 +29,10 @@ const CATEGORY = { backpacking: "backpacking", "near-nagpur": "nagpur" };
 const BADGE = { beginner: ["easy", "Easy"], moderate: ["moderate", "Moderate"], difficult: ["difficult", "Difficult"] };
 
 async function getDepartures() {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = istToday();
   const { data, error } = await publicClient()
     .from("trek_departures")
-    .select("start_date,end_date,capacity,booked_seats,price_override,status,treks!inner(slug,title,location,state,group,difficulty,days,duration_label,base_price,hero_image,status,deleted_at)")
+    .select("start_date,end_date,capacity,booked_seats,price_override,status,treks!inner(slug,title,location,state,group,difficulty,days,duration_days,duration_label,base_price,hero_image,status,deleted_at)")
     .gte("start_date", today)
     .neq("status", "cancelled")
     .eq("treks.status", "published")
@@ -46,7 +47,7 @@ function card(d) {
   const href = esc(canonicalPath(t));
   const price = Math.round((d.price_override ?? t.base_price ?? 0) / 100);
   const left = Math.max(0, d.capacity - d.booked_seats);
-  const days = t.days || (d.end_date ? Math.round((Date.parse(d.end_date) - Date.parse(d.start_date)) / 864e5) + 1 : 0);
+  const days = t.duration_days || t.days || (d.end_date ? Math.round((Date.parse(d.end_date) - Date.parse(d.start_date)) / 864e5) + 1 : 0);
   const [badgeCls, badgeLbl] = BADGE[t.difficulty] ?? [];
   const place = t.location || t.state || "";
   return `<div class="trek-card" data-category="${CATEGORY[t.group] ?? "upcoming"}" data-price="${price}" data-month="${Number(d.start_date.slice(5, 7))}"

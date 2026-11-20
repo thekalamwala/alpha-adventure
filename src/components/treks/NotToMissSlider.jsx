@@ -1,11 +1,24 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { readTrekHighlight } from "@/lib/trekHighlights";
 
-// Single card colour theme — applied as inline styles (not utility classes) so
-// the legacy global stylesheet / Bootstrap defaults can't override the border
-// and background colours.
-const CARD_THEME = { border: "#f7c6ac", bg: "#fff4ee", iconBg: "#ffe0d2", icon: "#fe5100" };
+const cardBackgrounds = [
+  "repeating-radial-gradient(ellipse at 81% 26%, transparent 0 23px, #edf8e91c 24px 25px, transparent 26px 38px), linear-gradient(145deg, #214d3f, #0a241e 72%)",
+  "repeating-radial-gradient(ellipse at 72% -23%, transparent 0 26px, #edf8e91f 27px 28px, transparent 29px 43px), linear-gradient(145deg, #175d58, #0a2622 70%)",
+];
+
+function cardContent(item) {
+  const { title, subtext } = readTrekHighlight(item);
+  const label = title.match(/^(Day|Night)\s+\d+(?=\s*[:–—])/i)?.[0];
+  const heading = label ? title.slice(label.length).replace(/^\s*[:–—]\s*/, "") : title;
+  return { label, title: heading, description: subtext };
+}
+
+function updateEdges(track, setAtStart, setAtEnd) {
+  setAtStart(track.scrollLeft <= 2);
+  setAtEnd(track.scrollLeft + track.clientWidth >= track.scrollWidth - 2);
+}
 
 // Horizontal card slider for the trek "Not to Miss" items. Plain overflow
 // scroll-snap so it needs no Swiper instance; arrows scroll by one card.
@@ -14,18 +27,21 @@ export default function NotToMissSlider({ items = [] }) {
   const [atStart, setAtStart] = useState(true);
   const [atEnd, setAtEnd] = useState(false);
 
-  const updateEdges = () => {
-    const el = trackRef.current;
-    if (!el) return;
-    setAtStart(el.scrollLeft <= 2);
-    setAtEnd(el.scrollLeft + el.clientWidth >= el.scrollWidth - 2);
-  };
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
+    const sync = () => updateEdges(track, setAtStart, setAtEnd);
+    sync();
+    const observer = new ResizeObserver(sync);
+    observer.observe(track);
+    return () => observer.disconnect();
+  }, [items.length]);
 
   const scrollByCard = (dir) => {
     const el = trackRef.current;
     if (!el) return;
     const card = el.querySelector("[data-card]");
-    const step = card ? card.getBoundingClientRect().width + 16 : el.clientWidth * 0.8;
+    const step = card ? card.getBoundingClientRect().width + parseFloat(getComputedStyle(el).columnGap) : el.clientWidth * 0.8;
     el.scrollBy({ left: dir * step, behavior: "smooth" });
   };
 
@@ -56,25 +72,24 @@ export default function NotToMissSlider({ items = [] }) {
 
       <div
         ref={trackRef}
-        onScroll={updateEdges}
-        className="flex snap-x snap-mandatory gap-4 overflow-x-auto px-1 pb-2 scroll-px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        onScroll={(event) => updateEdges(event.currentTarget, setAtStart, setAtEnd)}
+        className="flex snap-x snap-mandatory gap-[16px] overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
-        {items.map((item, i) => (
-          <div
-            key={i}
-            data-card
-            className="flex w-[280px] shrink-0 snap-start flex-col gap-3 rounded-xl2 p-4 text-[15px] leading-relaxed text-gray-700"
-            style={{ backgroundColor: CARD_THEME.bg, border: `1px solid ${CARD_THEME.border}` }}
-          >
-            <span
-              className="flex h-10 w-10 items-center justify-center rounded-xl2 text-lg"
-              style={{ backgroundColor: CARD_THEME.iconBg, color: CARD_THEME.icon }}
+        {items.map((item, i) => {
+          const { label, title, description } = cardContent(item);
+          return (
+            <article
+              key={i}
+              data-card
+              className="flex min-h-[190px] min-w-0 shrink-0 basis-[min(82%,320px)] snap-start flex-col justify-center break-words rounded-[24px] border border-white/10 p-5 sm:basis-[min(calc(50%-0.5rem),340px)] sm:p-6"
+              style={{ backgroundImage: cardBackgrounds[i % cardBackgrounds.length] }}
             >
-              <i className="bi bi-lightbulb-fill" />
-            </span>
-            <span>{item}</span>
-          </div>
-        ))}
+              {label && <span className="mb-2 self-start rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white">{label}</span>}
+              <h5 className="m-0 text-xl font-bold leading-tight text-[#f7f7e9] sm:text-2xl">{title}</h5>
+              {description && <p className="mb-0 mt-2 whitespace-pre-line text-sm leading-relaxed text-[#dbe7dd]">{description}</p>}
+            </article>
+          );
+        })}
       </div>
     </div>
   );

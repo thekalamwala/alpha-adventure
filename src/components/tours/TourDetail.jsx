@@ -121,16 +121,16 @@ export default function TourDetail({ tour }) {
     node: (
       <div className="grid gap-8 sm:grid-cols-2">
         <div>
-          <h4 className="mb-4">What&apos;s Included</h4>
-          <ul className="space-y-3">
+          <h4 className="mb-4 text-lg font-semibold text-ink">What&apos;s Included</h4>
+          <ul className="space-y-3 pl-0">
             {inclusions.map((t, i) => (
               <li key={i} className="flex items-start gap-2.5 text-gray-600"><i className="bi bi-check-circle-fill mt-0.5 text-green-600" /> {t}</li>
             ))}
           </ul>
         </div>
         <div>
-          <h4 className="mb-4">Not Included</h4>
-          <ul className="space-y-3">
+          <h4 className="mb-4 text-lg font-semibold text-ink">Not Included</h4>
+          <ul className="space-y-3 pl-0">
             {exclusions.map((t, i) => (
               <li key={i} className="flex items-start gap-2.5 text-gray-600"><i className="bi bi-x-circle-fill mt-0.5 text-red-500" /> {t}</li>
             ))}

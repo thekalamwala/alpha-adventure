@@ -1,5 +1,7 @@
 "use server";
 
+import { maxItineraryPhotos, saveItineraryPhotos } from "@/lib/itineraryPhotos";
+
 import { revalidatePublicTrek } from "@/lib/revalidateTrek";
 import { z } from "zod";
 import { requireAdmin } from "@/app/admin/data";
@@ -101,6 +103,7 @@ const rowSchema = z.object({
   summary: z.string().trim().min(1, "Summary required").max(500),
   overview: z.string().trim().min(1, "Overview required"),
   hero_image: z.string().trim().min(1, "Hero image required"),
+  hero_slides: z.array(z.string().trim().min(1)).optional(),
   base_price: z.coerce.number().min(0).max(10_000_000), // ₹
   difficulty: z.enum(["beginner", "moderate", "difficult"]),
   status: z.enum(["draft", "published"]),
@@ -135,7 +138,7 @@ const rowSchema = z.object({
   itinerary: z.array(z.object({
     title: z.string().trim().min(1),
     description: z.string().trim().optional().or(z.literal("")),
-    image: z.string().trim().optional().or(z.literal("")),
+    image: z.union([z.string().trim(), z.array(z.string().trim()).max(maxItineraryPhotos, "An itinerary day can have up to two photos.")]).optional(),
     trek_distance: z.string().trim().max(60).optional().or(z.literal("")),
     trek_duration: z.string().trim().max(60).optional().or(z.literal("")),
     drive_distance: z.string().trim().max(60).optional().or(z.literal("")),
@@ -176,6 +179,7 @@ export async function updateTrek(slug: string, raw: unknown): Promise<Result> {
     summary: t.summary,
     overview: t.overview,
     hero_image: t.hero_image,
+    ...(t.hero_slides !== undefined && { hero_slides: t.hero_slides }),
     base_price: toPaise(t.base_price),
     difficulty: t.difficulty,
     status: t.status,
@@ -223,7 +227,7 @@ export async function updateTrek(slug: string, raw: unknown): Promise<Result> {
   ));
   if (t.itinerary.length) jobs.push(admin.from("itinerary_days").insert(
     t.itinerary.map((d, i) => ({
-      trek_id: id, day_no: i + 1, title: d.title, description: blank(d.description), image: blank(d.image),
+      trek_id: id, day_no: i + 1, title: d.title, description: blank(d.description), image: saveItineraryPhotos(d.image),
       trek_distance: blank(d.trek_distance), trek_duration: blank(d.trek_duration),
       drive_distance: blank(d.drive_distance), drive_duration: blank(d.drive_duration),
       altitude_gain: blank(d.altitude_gain), altitude_loss: blank(d.altitude_loss), meals: blank(d.meals),

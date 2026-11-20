@@ -71,6 +71,12 @@
                 });
             }
 
+            function escapeHtml(value) {
+                return String(value).replace(/[&<>"']/g, function (char) {
+                    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char];
+                });
+            }
+
             function buildSpecMarkup(specValue) {
                 return parseSpecs(specValue).map(function (item) {
                     var parts = item.split(':');
@@ -78,17 +84,17 @@
                     var value = parts.join(':').trim();
 
                     if (!value) {
-                        return '<li>' + item + '</li>';
+                        return '<li>' + escapeHtml(item) + '</li>';
                     }
 
-                    return '<li><strong>' + label.trim() + ':</strong> <span>' + value + '</span></li>';
+                    return '<li><strong>' + escapeHtml(label.trim()) + ':</strong> <span>' + escapeHtml(value) + '</span></li>';
                 }).join('');
             }
 
             function getProductImages(productId, fallbackImage) {
-                return (productImageMap[productId] || [fallbackImage]).filter(function (imageSrc) {
-                    return !!imageSrc;
-                });
+                var original = productImageMap[productId];
+                return original && fallbackImage.replace(/^\//, '') === original[0]
+                    ? original : fallbackImage ? [fallbackImage] : [];
             }
 
             function destroyModalCarousel() {
@@ -116,7 +122,7 @@
                     modalCarousel.hidden = false;
                     modalCarouselWrapper.innerHTML = imageList.map(function (imageSrc) {
                         return '<div class="swiper-slide">' +
-                            '<img src="' + imageSrc + '" alt="' + productName + '">' +
+                            '<img src="' + escapeHtml(imageSrc) + '" alt="' + escapeHtml(productName) + '">' +
                         '</div>';
                     }).join('');
                 } else {
@@ -221,7 +227,7 @@
                     var productId = button.getAttribute('data-product-id');
                     var productName = button.getAttribute('data-product-name') || card.getAttribute('data-name') || '';
                     var fallbackImage = button.getAttribute('data-product-image') || imageLink.querySelector('img')?.getAttribute('src') || '';
-                    var imageList = productImageMap[productId] || [fallbackImage];
+                    var imageList = getProductImages(productId, fallbackImage);
                     var swiperId = 'shop-swiper-' + productId;
 
                     mediaWrap.innerHTML = [
@@ -230,7 +236,7 @@
                         imageList.map(function (imageSrc) {
                             return '<div class="swiper-slide">' +
                                 '<a href="product-details.html" class="product-card-img">' +
-                                    '<img src="' + imageSrc + '" alt="' + productName + '">' +
+                                    '<img src="' + escapeHtml(imageSrc) + '" alt="' + escapeHtml(productName) + '">' +
                                 '</a>' +
                             '</div>';
                         }).join(''),

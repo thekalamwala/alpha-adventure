@@ -15,14 +15,18 @@ const EXT: Record<string, string> = {
 // gets real progress) instead of through a server action, which had no
 // progress, no timeout, and hit Vercel's ~4.5 MB function body cap.
 export async function createImageUpload(
-  meta: { type: string; size: number; folder?: string },
+  meta: { type: string; size: number; folder?: string; kind?: "itinerary" },
 ): Promise<{ ok: true; uploadUrl: string; publicUrl: string } | { ok: false; error: string }> {
   await requireAdmin();
 
-  if (!ALLOWED.has(meta.type)) return { ok: false, error: "Use a JPG, PNG, WebP, GIF, AVIF or SVG image." };
-  if (meta.size > MAX_BYTES) return { ok: false, error: "Image is too large (max 5 MB)." };
-  const folder = String(meta.folder || "misc").replace(/[^a-z0-9/_-]/gi, "") || "misc";
-  const path = `${folder}/${crypto.randomUUID()}.${EXT[meta.type]}`;
+  const pdf = meta.kind === "itinerary";
+  if (pdf ? meta.type !== "application/pdf" : !ALLOWED.has(meta.type)) {
+    return { ok: false, error: pdf ? "Choose a PDF file." : "Use a JPG, PNG, WebP, GIF, AVIF or SVG image." };
+  }
+  if (meta.size > MAX_BYTES) return { ok: false, error: pdf ? "PDF is too large (max 5 MB)." : "Image is too large (max 5 MB)." };
+  if (pdf && (!Number.isFinite(meta.size) || meta.size <= 0)) return { ok: false, error: "Choose a nonempty PDF file." };
+  const folder = pdf ? "treks/itinerary-pdfs" : String(meta.folder || "misc").replace(/[^a-z0-9/_-]/gi, "") || "misc";
+  const path = `${folder}/${crypto.randomUUID()}.${pdf ? "pdf" : EXT[meta.type]}`;
 
   const admin = createAdminClient();
   let { data, error } = await admin.storage.from("media").createSignedUploadUrl(path);

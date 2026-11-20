@@ -34,8 +34,11 @@ export default async function GalleryDetailPage(props) {
   const album = await getGalleryAlbum(params.slug);
   if (!album) notFound();
 
-  // Album metadata from the DB; the seasonal photo grids are the shared template.
-  const page = { slug: album.slug, title: album.title, hero: album.hero, heroAlt: album.hero_alt, seasons: SEASONS };
+  const seasons = album.seasonPhotos === null ? SEASONS : SEASONS.map((season) => ({
+    ...season,
+    images: album.seasonPhotos[season.id] ?? [],
+  }));
+  const page = { slug: album.slug, title: album.title, hero: album.hero, heroAlt: album.hero_alt, seasons };
   return (
     <>
       <div suppressHydrationWarning dangerouslySetInnerHTML={{ __html: galleryDetailHtml(page) }} />
