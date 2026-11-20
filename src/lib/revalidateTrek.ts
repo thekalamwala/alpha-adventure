@@ -7,8 +7,9 @@ import { GROUP_ALIASES } from "./sections";
 // detail and booking pages.
 export function revalidatePublicTrek(slug?: string | null) {
   revalidatePath("/admin");
-  revalidatePath("/"); // home "Popular/Top Treks" sliders
+  revalidatePath("/", "layout"); // shared catalogue menus and home sliders
   revalidatePath("/treks");
+  revalidatePath("/travel-calendar");
   revalidatePath("/backpacking-trips");
   revalidatePath("/trips-near-nagpur");
   for (const alias of Object.keys(GROUP_ALIASES)) revalidatePath(`/treks/${alias}`);

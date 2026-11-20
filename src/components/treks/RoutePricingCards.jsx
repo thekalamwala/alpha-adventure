@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { site } from "@/data/site";
 import { trekCostBySlug, tripCostBySlug, tourTripCostBySlug } from "@/data/route-pricing";
-import ImportantNoteButton from "./ImportantNoteButton";
+import CopyTrekPhone from "./CopyTrekPhone";
+import { getGoogleReviewSettings } from "@/lib/getGoogleReviewSettings";
+import { formatGoogleReviews } from "@/lib/googleReviewSettings";
 
 const phoneHref = site.phone ? `tel:${site.phone.replace(/[^+\d]/g, "")}` : null;
 
@@ -61,29 +63,70 @@ function PricingTable({ rows }) {
   );
 }
 
-function PricingCard({ title, data, bookHref, whatsapp, singlePrice, basePrice, notes }) {
+async function TrekCostCard({ headline, bookHref, groupSize, inclusions }) {
+  const leader = inclusions.find((item) => /trek (?:leader|guide)/i.test(item));
+  const permits = inclusions.find((item) => /\bpermits?\b/i.test(item));
+  const details = [
+    ["bi-people", groupSize ? `Group size: ${groupSize}` : null],
+    ["bi-shield-check", leader],
+    ["bi-tree", permits === leader ? null : permits],
+    ["bi-star-fill", formatGoogleReviews(await getGoogleReviewSettings())],
+  ];
+
+  return (
+    <aside aria-label="Trek Cost" className="rounded-[24px] border border-[#c7d9ca] bg-white p-5 text-[#18382b] shadow-soft sm:p-6">
+      <h3 className="m-0 text-[10px] font-bold uppercase tracking-[0.16em] text-[#355648]">Trek Cost, including GST</h3>
+      {headline && (
+        <div className="mt-1 flex flex-wrap items-baseline gap-x-2">
+          <span className="text-4xl font-extrabold leading-tight tracking-tight">{headline}</span>
+          <span className="text-xs text-[#426454]">per person</span>
+        </div>
+      )}
+      <Link href={bookHref} className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-[#ff571f] px-4 py-2 text-sm font-bold text-[#101d17] transition hover:bg-[#ff773f] hover:text-[#101d17]">
+        Book Now <i className="bi bi-arrow-right" aria-hidden="true" />
+      </Link>
+
+      {(site.phone || site.secondaryPhone) && (
+        <div className="mt-4">
+          <h4 className="mb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#355648]">Call our trek expert</h4>
+          <div className="divide-y divide-[#e1e9e2] rounded-xl border border-[#e1e9e2]">
+            {[site.phone, site.secondaryPhone].filter(Boolean).map((phone) => (
+              <div key={phone} className="flex items-center justify-between gap-2 px-3 py-2">
+                <a href={`tel:${phone.replace(/[^+\d]/g, "")}`} className="select-text whitespace-nowrap text-xs font-semibold text-[#18382b] hover:text-[#315e46]">{phone}</a>
+                <CopyTrekPhone phone={phone} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {site.whatsapp && (
+        <a href={site.whatsapp} target="_blank" rel="noreferrer"
+          className="mt-2 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-full border border-[#a6bdaa] px-4 py-2 text-sm font-semibold text-[#18382b] transition hover:bg-white/70 hover:text-[#315e46]">
+          <i className="bi bi-whatsapp" aria-hidden="true" /> WhatsApp us
+        </a>
+      )}
+      <ul className="mb-0 mt-4 space-y-2 border-t border-[#c7d9ca] pt-3 text-xs leading-relaxed text-[#355648]">
+        {details.filter(([, text]) => text).map(([icon, text]) => (
+          <li key={icon} className="flex items-baseline gap-2">
+            <i className={`bi ${icon} shrink-0 text-[#b6481f]`} aria-hidden="true" /> {text}
+          </li>
+        ))}
+      </ul>
+    </aside>
+  );
+}
+
+function PricingCard({ title, data, bookHref, whatsapp }) {
   if (!data) return null;
-  // Sidebar (singlePrice): one headline price from the trek's base_price (same
-  // field the listing + booking use) so the detail price can't diverge from what
-  // the customer pays. Falls back to the route table's first row.
-  const headline = basePrice != null ? rupees(basePrice) : data.rows?.[0]?.price;
-  // Prefer per-trek notes (admin-editable, DB) over the static route-pricing notes.
-  const noteList = notes && notes.length ? notes : (data.notes || []);
+  const noteList = data.notes ?? [];
   return (
     <div className="flex h-full flex-col rounded-xl2 border border-line/70 bg-white p-6 shadow-soft sm:p-8">
       <h3 className="text-2xl font-extrabold text-ink">{title}</h3>
       <p className="mb-5 text-sm font-medium text-gray-500">including GST</p>
 
-      {singlePrice ? (
-        <div className="rounded-xl2 border border-line/70 bg-page/50 p-6 text-center">
-          <div className="text-4xl font-extrabold text-primary">{headline}</div>
-          <div className="mt-1 text-sm text-gray-500">per person</div>
-        </div>
-      ) : (
-        <div className="min-h-[220px]">
-          <PricingTable rows={data.rows} />
-        </div>
-      )}
+      <div className="min-h-[220px]">
+        <PricingTable rows={data.rows} />
+      </div>
 
       {whatsapp ? (
         <a
@@ -109,10 +152,7 @@ function PricingCard({ title, data, bookHref, whatsapp, singlePrice, basePrice, 
         </Link>
       )}
 
-      {singlePrice ? (
-        // Compact sidebar: notes behind an "Important Note" button → modal.
-        <ImportantNoteButton notes={noteList} />
-      ) : noteList.length ? (
+      {noteList.length ? (
         <div className="mt-6 min-h-[150px] flex-1">
           <h4 className="mb-2 text-sm font-bold text-ink">Note:</h4>
           <ol className="list-decimal space-y-1.5 pl-5 text-sm leading-relaxed text-gray-600">
@@ -139,20 +179,16 @@ function PricingCard({ title, data, bookHref, whatsapp, singlePrice, basePrice, 
 // renders just the Trek Cost card (sidebar); `variant="trip"` renders just the
 // Trip Cost card (full-width). Looks up data by slug; renders nothing when the
 // requested card has no data for the trek.
-export function RoutePricingCard({ slug, bookHref, variant = "trek", basePrice, notes }) {
-  let data =
-    variant === "tour" ? tourTripCostBySlug[slug] : variant === "trip" ? tripCostBySlug[slug] : trekCostBySlug[slug];
-  const title = variant === "tour" ? "Trip Cost" : variant === "trip" ? "Trip Cost" : "Trek Cost";
-  // Trek sidebar: always show a price card from base_price, even for treks with no
-  // route-pricing entry (e.g. newly added treks like "eureka").
-  if (!data && variant === "trek" && basePrice != null) data = { rows: [], notes: [] };
-  if (!data) return null;
-  // Tour packages enquire over WhatsApp (mirrors the tour sidebar's
-  // "Book / Enquire" button); trek/trip cards keep linking to the booking flow.
-  const whatsapp = variant === "tour" ? site.whatsapp : null;
-  // The trek sidebar shows a single headline price (original design); the
-  // full-width trip/tour cards keep the detailed route table.
-  return <PricingCard title={title} data={data} bookHref={bookHref} whatsapp={whatsapp} singlePrice={variant === "trek"} basePrice={basePrice} notes={notes} />;
+export function RoutePricingCard({ slug, bookHref, variant = "trek", basePrice, groupSize, inclusions = [] }) {
+  if (variant === "trek") {
+    const data = trekCostBySlug[slug];
+    if (!data && basePrice == null) return null;
+    return <TrekCostCard headline={basePrice != null ? rupees(basePrice) : data?.rows?.[0]?.price}
+      bookHref={bookHref}
+      groupSize={groupSize} inclusions={inclusions} />;
+  }
+  const data = variant === "tour" ? tourTripCostBySlug[slug] : tripCostBySlug[slug];
+  return <PricingCard title="Trip Cost" data={data} bookHref={bookHref} whatsapp={variant === "tour" ? site.whatsapp : null} />;
 }
 
 export default function RoutePricingCards({ slug, bookHref }) {

@@ -16,7 +16,7 @@ export default async function EditTrekPage(props: { params: Promise<{ slug: stri
     .maybeSingle();
   if (!t) notFound();
 
-  const [inc, exc, pkgs, iti, faq, gal, brd] = await Promise.all([
+  const [inc, exc, pkgs, iti, faq, gal, brd, heroSlides] = await Promise.all([
     admin.from("inclusions").select("text").eq("trek_id", t.id).order("sort"),
     admin.from("exclusions").select("text").eq("trek_id", t.id).order("sort"),
     admin.from("pricing_packages").select("name,price,inclusions,cta_label").eq("trek_id", t.id).order("sort"),
@@ -24,6 +24,7 @@ export default async function EditTrekPage(props: { params: Promise<{ slug: stri
     admin.from("trek_faqs").select("question,answer").eq("trek_id", t.id).order("sort"),
     admin.from("trek_gallery").select("image_url,caption").eq("trek_id", t.id).order("sort_order"),
     admin.from("trek_boarding_locations").select("id,name,subtext,price").eq("trek_id", t.id).order("position"),
+    admin.from("treks").select("hero_slides").eq("id", t.id).maybeSingle(),
   ]);
 
   const initial = {
@@ -32,6 +33,7 @@ export default async function EditTrekPage(props: { params: Promise<{ slug: stri
     summary: t.summary ?? "",
     overview: t.overview ?? "",
     hero_image: t.hero_image ?? "",
+    hero_slides: heroSlides.error ? undefined : (heroSlides.data?.hero_slides ?? null) as string[] | null,
     price: String(Math.round((t.base_price ?? 0) / 100)),
     difficulty: t.difficulty ?? "moderate",
     status: t.status ?? "draft",

@@ -11,6 +11,9 @@ import {
   X, Check, AlertCircle, Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { trekAboutHtml, trekAboutStyles } from "@/lib/trekAbout";
+import { readTrekHighlight } from "@/lib/trekHighlights";
+import { saveGoogleReviewSettings } from "./saveGoogleReviewSettings";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -70,6 +73,7 @@ type AdminActions = {
   // Real Supabase-backed, read-only slices (kept separate from the editable
   // mock state above, which the add-modals mutate locally).
   kpis: AdminData["kpis"];
+  googleReviews: AdminData["googleReviews"];
   charts: AdminData["charts"];
   leads: AdminData["leadRows"];
   customers: AdminData["customerRows"];
@@ -90,6 +94,7 @@ const NAV = [
   ] },
   { key: "catalog", label: "Catalog", icon: Package, items: [
     { key: "treks", label: "Treks" }, { key: "tours", label: "Tours" }, { key: "content", label: "Blog" }, { key: "gallery", label: "Gallery" },
+    { key: "shop", label: "Shop", href: "/admin/shop" },
   ] },
   { key: "customers", label: "Customers", icon: Users, items: [
     { key: "all-customers", label: "All Customers" }, { key: "reviews", label: "Testimonials" },
@@ -224,6 +229,7 @@ export default function AdminShell({ data }: { data: AdminData }) {
     notifs,
     setNotifs,
     kpis: data.kpis,
+    googleReviews: data.googleReviews,
     charts: data.charts,
     leads: data.leadRows,
     customers: data.customerRows,
@@ -351,7 +357,7 @@ function Page({ item, actions }: { item: string; actions: AdminActions }) {
     case "all-customers": return <CustomersPage actions={actions} />;
     case "reviews": return <TestimonialsPage actions={actions} />;
     case "payments": return <PaymentsPage actions={actions} />;
-    case "s-general": return <SettingsGeneral notify={actions.notify} />;
+    case "s-general": return <SettingsGeneral notify={actions.notify} googleReviews={actions.googleReviews} />;
     case "s-email": return <SettingsEmail />;
     default: return <Stub title={label(item.replace(/^s-/, ""))} notify={actions.notify} />;
   }
@@ -812,11 +818,14 @@ function TrekDetailModal({ detail, onClose }: { detail: TrekDetail | null; onClo
               </div>
             </DetailBox>
 
-            {detail.overview && <DetailBox title="Overview" className="mt-4"><p className="text-sm text-gray-600 whitespace-pre-wrap">{detail.overview}</p></DetailBox>}
+            {detail.overview && <DetailBox title="About" className="mt-4"><div className={`text-sm text-gray-600 ${trekAboutStyles}`} dangerouslySetInnerHTML={{ __html: trekAboutHtml(detail.overview) }} /></DetailBox>}
 
             {detail.notToMiss.length > 0 && (
               <DetailBox title="Not to miss" className="mt-4">
-                <ul className="list-disc pl-4 text-sm text-gray-600 space-y-1">{detail.notToMiss.map((x, i) => <li key={i}>{x}</li>)}</ul>
+                <ul className="list-disc pl-4 text-sm text-gray-600 space-y-1">{detail.notToMiss.map((value, i) => {
+                  const { title, subtext } = readTrekHighlight(value);
+                  return <li key={i}>{title}{subtext && <p className="whitespace-pre-line">{subtext}</p>}</li>;
+                })}</ul>
               </DetailBox>
             )}
             {detail.brochureUrl && (
@@ -867,7 +876,8 @@ function TrekDetailModal({ detail, onClose }: { detail: TrekDetail | null; onClo
                   {detail.itinerary.map((d, i) => (
                     <li key={i} className="text-sm">
                       <span className="font-medium text-ink">Day {i + 1}: {d.title}</span>
-                      {d.description && <p className="mt-0.5 text-gray-500">{d.description}</p>}
+                      {d.description && <div className={`mt-0.5 text-gray-500 ${trekAboutStyles}`}
+                        dangerouslySetInnerHTML={{ __html: trekAboutHtml(d.description) }} />}
                     </li>
                   ))}
                 </ol>
@@ -926,7 +936,10 @@ function DeparturesPage({ actions }: { actions: AdminActions }) {
   ];
   return (
     <div>
-      <PageHead title="Departures" sub="Batch schedule and seat occupancy." action={<Button size="sm" onClick={() => actions.openModal({ type: "departure" })}><Plus size={16} /> New departure</Button>} />
+      <PageHead title="Departures" sub="Manage trek dates, pricing, and capacity for the public Travel Calendar." action={<div className="flex flex-wrap gap-2">
+        <Button asChild variant="secondary" size="sm"><Link href="/travel-calendar">View Travel Calendar</Link></Button>
+        <Button size="sm" onClick={() => actions.openModal({ type: "departure" })}><Plus size={16} /> New departure</Button>
+      </div>} />
       <Card><CardContent className="p-0">
         <Table>
           <TableHeader><TableRow className="hover:bg-transparent">
@@ -961,7 +974,26 @@ function DeparturesPage({ actions }: { actions: AdminActions }) {
   );
 }
 
+function useDialogDismiss(onClose: () => void, enabled = true) {
+  useEffect(() => {
+    if (!enabled) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !event.defaultPrevented) {
+        event.preventDefault();
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [enabled, onClose]);
+
+  return (event: React.MouseEvent<HTMLDivElement>) => {
+    if (enabled && event.target === event.currentTarget) onClose();
+  };
+}
+
 function DepartureEditModal({ dep, onClose, onSaved }: { dep: DepartureRow; onClose: () => void; onSaved: () => void }) {
+  const dismissBackdrop = useDialogDismiss(onClose);
   const [f, setF] = useState({
     start_date: dep.startDate, end_date: dep.endDate, start_time: dep.startTime,
     capacity: String(dep.capacity), price_override: String(dep.priceOverride ?? ""), status: dep.status,
@@ -976,23 +1008,23 @@ function DepartureEditModal({ dep, onClose, onSaved }: { dep: DepartureRow; onCl
     if (r.ok) onSaved(); else { setErr(r.error); setBusy(false); }
   }
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-ink/40 p-6">
-      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl" role="dialog" aria-label="Edit departure">
+    <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-ink/40 p-3 sm:p-6" onClick={dismissBackdrop}>
+      <div className="w-full max-w-lg rounded-2xl bg-white p-4 shadow-2xl sm:p-6" role="dialog" aria-modal="true" aria-label="Edit departure">
         <div className="mb-1 flex items-center justify-between"><h2 className="text-lg font-bold">Edit date</h2>
-          <button onClick={onClose} className="grid h-8 w-8 place-items-center rounded-md text-gray-400 hover:bg-slate-100 hover:text-ink"><X size={18} /></button></div>
+          <button type="button" aria-label="Close" onClick={onClose} className="grid h-8 w-8 place-items-center rounded-md text-gray-400 hover:bg-slate-100 hover:text-ink"><X size={18} /></button></div>
         <p className="mb-4 text-sm text-gray-500">{dep.trek}</p>
         {err && <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">{err}</div>}
         <form className="space-y-3" onSubmit={submit}>
-          <div className="grid grid-cols-3 gap-3">
-            <label className="grid gap-1.5"><span className="text-xs font-medium text-gray-500">Start date</span><input type="date" className={inp} value={f.start_date} onChange={(e) => set("start_date", e.target.value)} /></label>
-            <label className="grid gap-1.5"><span className="text-xs font-medium text-gray-500">End date</span><input type="date" className={inp} value={f.end_date} onChange={(e) => set("end_date", e.target.value)} /></label>
-            <label className="grid gap-1.5"><span className="text-xs font-medium text-gray-500">Start time</span><input className={inp} value={f.start_time} onChange={(e) => set("start_time", e.target.value)} /></label>
+          <div className="grid grid-cols-1 items-start gap-3 min-[390px]:grid-cols-2 sm:grid-cols-3">
+            <label className="grid min-w-0 gap-1.5"><span className="text-xs font-medium text-gray-500">Start date</span><input type="date" className={cn(inp, "h-11 min-w-0")} value={f.start_date} onChange={(e) => set("start_date", e.target.value)} /></label>
+            <label className="grid min-w-0 gap-1.5"><span className="text-xs font-medium text-gray-500">End date</span><input type="date" className={cn(inp, "h-11 min-w-0")} value={f.end_date} onChange={(e) => set("end_date", e.target.value)} /></label>
+            <label className="grid min-w-0 gap-1.5"><span className="text-xs font-medium text-gray-500">Start time</span><input className={cn(inp, "h-11 min-w-0")} value={f.start_time} onChange={(e) => set("start_time", e.target.value)} /></label>
           </div>
-          <div className="grid grid-cols-3 gap-3">
-            <label className="grid gap-1.5"><span className="text-xs font-medium text-gray-500">Capacity</span><input type="number" min={1} className={inp} value={f.capacity} onChange={(e) => set("capacity", e.target.value)} /></label>
-            <label className="grid gap-1.5"><span className="text-xs font-medium text-gray-500">Price ₹</span><input type="number" min={0} className={inp} value={f.price_override} onChange={(e) => set("price_override", e.target.value)} placeholder="base" /></label>
-            <label className="grid gap-1.5"><span className="text-xs font-medium text-gray-500">Status</span>
-              <select className={inp} value={f.status} onChange={(e) => set("status", e.target.value)}>
+          <div className="grid grid-cols-1 items-start gap-3 min-[390px]:grid-cols-2 sm:grid-cols-3">
+            <label className="grid min-w-0 gap-1.5"><span className="text-xs font-medium text-gray-500">Capacity</span><input type="number" min={1} className={cn(inp, "h-11 min-w-0")} value={f.capacity} onChange={(e) => set("capacity", e.target.value)} /></label>
+            <label className="grid min-w-0 gap-1.5"><span className="text-xs font-medium text-gray-500">Price ₹</span><input type="number" min={0} className={cn(inp, "h-11 min-w-0")} value={f.price_override} onChange={(e) => set("price_override", e.target.value)} placeholder="Base price" /></label>
+            <label className="grid min-w-0 gap-1.5"><span className="text-xs font-medium text-gray-500">Status</span>
+              <select className={cn(inp, "h-11 min-w-0")} value={f.status} onChange={(e) => set("status", e.target.value)}>
                 <option>open</option><option>scheduled</option><option>full</option><option>closed</option><option>cancelled</option><option>completed</option>
               </select></label>
           </div>
@@ -1383,6 +1415,7 @@ function EntityModal({ type, treks, trekOptions, onSave, onClose }: {
   onSave: (payload: any) => void | Promise<{ ok: boolean; error?: string }>;
   onClose: () => void;
 }) {
+  const dismissBackdrop = useDialogDismiss(onClose, type === "departure");
   const [b, setB] = useState({ customer: "", trek: treks[0]?.title ?? "", date: "", pax: 1, amount: "", status: "pending_payment" });
   const [t, setT] = useState({ title: "", region: "Sahyadri", difficulty: "beginner", price: "", departures: 0, status: "draft" });
   const [d, setD] = useState({ trek_id: trekOptions[0]?.id ?? "", start_date: "", end_date: "", start_time: "", capacity: "30", price_override: "", status: "open" });
@@ -1425,11 +1458,11 @@ function EntityModal({ type, treks, trekOptions, onSave, onClose }: {
   }
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-ink/40 p-6">
-      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl" role="dialog" aria-label={titles}>
+    <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-ink/40 p-3 sm:p-6" onClick={dismissBackdrop}>
+      <div className={cn("w-full rounded-2xl bg-white shadow-2xl", type === "departure" ? "max-w-lg p-4 sm:p-6" : "max-w-md p-6")} role="dialog" aria-modal="true" aria-label={titles}>
         <div className="mb-1 flex items-center justify-between">
           <h2 className="text-lg font-bold">{titles}</h2>
-          <button onClick={onClose} className="grid h-8 w-8 place-items-center rounded-md text-gray-400 hover:bg-slate-100 hover:text-ink"><X size={18} /></button>
+          <button type="button" aria-label="Close" onClick={onClose} className="grid h-8 w-8 place-items-center rounded-md text-gray-400 hover:bg-slate-100 hover:text-ink"><X size={18} /></button>
         </div>
         <p className="mb-5 text-sm text-gray-500">{theme.subtitle}</p>
         {err && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">{err}</div>}
@@ -1498,32 +1531,32 @@ function EntityModal({ type, treks, trekOptions, onSave, onClose }: {
           )}
           {type === "departure" && (
             <>
-              <label className="grid gap-1.5"><span className="text-xs font-medium text-gray-500">Trek</span>
-                <select className={inp} value={d.trek_id} onChange={(e) => setD({ ...d, trek_id: e.target.value })}>
+              <label className="grid min-w-0 gap-1.5"><span className="text-xs font-medium text-gray-500">Trek</span>
+                <select className={cn(inp, "h-11 min-w-0")} value={d.trek_id} onChange={(e) => setD({ ...d, trek_id: e.target.value })}>
                   {trekOptions.length === 0 && <option value="">No treks yet — add one first</option>}
                   {trekOptions.map((x) => <option key={x.id} value={x.id}>{x.title}</option>)}
                 </select>
               </label>
-              <div className="grid grid-cols-3 gap-3">
-                <label className="grid gap-1.5"><span className="text-xs font-medium text-gray-500">Start date</span>
-                  <input type="date" className={inp} value={d.start_date} onChange={(e) => setD({ ...d, start_date: e.target.value })} />
+              <div className="grid grid-cols-1 items-start gap-3 min-[390px]:grid-cols-2 sm:grid-cols-3">
+                <label className="grid min-w-0 gap-1.5"><span className="text-xs font-medium text-gray-500">Start date</span>
+                  <input type="date" className={cn(inp, "h-11 min-w-0")} value={d.start_date} onChange={(e) => setD({ ...d, start_date: e.target.value })} />
                 </label>
-                <label className="grid gap-1.5"><span className="text-xs font-medium text-gray-500">End date</span>
-                  <input type="date" className={inp} value={d.end_date} onChange={(e) => setD({ ...d, end_date: e.target.value })} />
+                <label className="grid min-w-0 gap-1.5"><span className="text-xs font-medium text-gray-500">End date</span>
+                  <input type="date" className={cn(inp, "h-11 min-w-0")} value={d.end_date} onChange={(e) => setD({ ...d, end_date: e.target.value })} />
                 </label>
-                <label className="grid gap-1.5"><span className="text-xs font-medium text-gray-500">Start time</span>
-                  <input className={inp} value={d.start_time} onChange={(e) => setD({ ...d, start_time: e.target.value })} placeholder="10:00 PM" />
+                <label className="grid min-w-0 gap-1.5"><span className="text-xs font-medium text-gray-500">Start time</span>
+                  <input className={cn(inp, "h-11 min-w-0")} value={d.start_time} onChange={(e) => setD({ ...d, start_time: e.target.value })} placeholder="10:00 PM" />
                 </label>
               </div>
-              <div className="grid grid-cols-3 gap-3">
-                <label className="grid gap-1.5"><span className="text-xs font-medium text-gray-500">Capacity</span>
-                  <input type="number" min={1} className={inp} value={d.capacity} onChange={(e) => setD({ ...d, capacity: e.target.value })} />
+              <div className="grid grid-cols-1 items-start gap-3 min-[390px]:grid-cols-2 sm:grid-cols-3">
+                <label className="grid min-w-0 gap-1.5"><span className="text-xs font-medium text-gray-500">Capacity</span>
+                  <input type="number" min={1} className={cn(inp, "h-11 min-w-0")} value={d.capacity} onChange={(e) => setD({ ...d, capacity: e.target.value })} />
                 </label>
-                <label className="grid gap-1.5"><span className="text-xs font-medium text-gray-500">Price ₹ <span className="text-gray-400">(blank=base)</span></span>
-                  <input type="number" min={0} className={inp} value={d.price_override} onChange={(e) => setD({ ...d, price_override: e.target.value })} placeholder="base" />
+                <label className="grid min-w-0 gap-1.5"><span className="text-xs font-medium text-gray-500">Price ₹</span>
+                  <input type="number" min={0} className={cn(inp, "h-11 min-w-0")} value={d.price_override} onChange={(e) => setD({ ...d, price_override: e.target.value })} placeholder="Base price" />
                 </label>
-                <label className="grid gap-1.5"><span className="text-xs font-medium text-gray-500">Status</span>
-                  <select className={inp} value={d.status} onChange={(e) => setD({ ...d, status: e.target.value })}>
+                <label className="grid min-w-0 gap-1.5"><span className="text-xs font-medium text-gray-500">Status</span>
+                  <select className={cn(inp, "h-11 min-w-0")} value={d.status} onChange={(e) => setD({ ...d, status: e.target.value })}>
                     <option>open</option><option>scheduled</option><option>full</option><option>closed</option><option>cancelled</option><option>completed</option>
                   </select>
                 </label>
@@ -1540,8 +1573,26 @@ function EntityModal({ type, treks, trekOptions, onSave, onClose }: {
   );
 }
 
-function SettingsGeneral({ notify }: { notify: (m: string) => void }) {
+function SettingsGeneral({ notify, googleReviews }: { notify: AdminActions["notify"]; googleReviews: AdminData["googleReviews"] }) {
   const [saved, setSaved] = useState(false);
+  const [savingReviews, setSavingReviews] = useState(false);
+  async function saveReviews(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const fields = new FormData(event.currentTarget);
+    setSavingReviews(true);
+    try {
+      const result = await saveGoogleReviewSettings({
+        rating: Number(fields.get("rating")),
+        count: Number(fields.get("count")),
+        showPlus: fields.has("showPlus"),
+      });
+      notify(result.ok ? "Google reviews updated" : result.error, result.ok);
+    } catch {
+      notify("Could not save Google review settings.", false);
+    } finally {
+      setSavingReviews(false);
+    }
+  }
   const save = () => {
     setSaved(true);
     notify("Settings saved");
@@ -1558,6 +1609,23 @@ function SettingsGeneral({ notify }: { notify: (m: string) => void }) {
         <Row label="Phone / WhatsApp"><input className={inp} defaultValue="+91 8180001597" /></Row>
         <Row label="Base city"><input className={inp} defaultValue="Nagpur, Maharashtra" /></Row>
         <Row label="Currency"><select className={inp} defaultValue="INR"><option>INR</option><option>USD</option></select></Row>
+      </CardContent></Card>
+      <Card className="mt-5"><CardContent className="p-6">
+        <form onSubmit={saveReviews} className="space-y-4">
+          <h2 className="text-base font-semibold text-ink">Google reviews</h2>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="grid gap-1.5 text-sm font-medium">Rating out of 5
+              <input name="rating" type="number" min="1" max="5" step="0.1" required defaultValue={googleReviews.rating} className={inp} />
+            </label>
+            <label className="grid gap-1.5 text-sm font-medium">Review count
+              <input name="count" type="number" min="0" step="1" required defaultValue={googleReviews.count} className={inp} />
+            </label>
+          </div>
+          <label className="flex items-center gap-2 text-sm">
+            <input name="showPlus" type="checkbox" defaultChecked={googleReviews.showPlus} /> Show a + after the count
+          </label>
+          <Button type="submit" size="sm" disabled={savingReviews}>{savingReviews ? "Saving…" : "Save Google reviews"}</Button>
+        </form>
       </CardContent></Card>
     </div>
   );

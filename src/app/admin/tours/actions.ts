@@ -31,7 +31,7 @@ function revalidateTour(slug: string) {
   revalidatePath("/admin");
   revalidatePath("/tour-packages");
   revalidatePath(`/tour-packages/${slug}`);
-  revalidatePath("/");
+  revalidatePath("/", "layout");
 }
 
 export async function createTour(raw: unknown): Promise<Result> {

@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import ProgrammePageBody from "@/components/layout/ProgrammePageBody";
 
 const studentHtml = fs.readFileSync(
   path.join(process.cwd(), "src/data/orig-student-programmes.html"),
@@ -15,10 +16,5 @@ export const metadata = {
 
 // Serves the student-programmes page body verbatim.
 export default function StudentProgrammesPage() {
-  return (
-    <div
-      suppressHydrationWarning
-      dangerouslySetInnerHTML={{ __html: studentHtml }}
-    />
-  );
+  return <ProgrammePageBody html={studentHtml} />;
 }

@@ -1,5 +1,11 @@
 "use client";
 
+import TrekAboutEditor from "../TrekAboutEditor";
+import ItineraryPhotoFields from "../ItineraryPhotoFields";
+
+import HighlightEditor from "../HighlightEditor";
+import { saveTrekHighlights } from "@/lib/trekHighlights";
+
 import { revealOnMount } from "@/lib/utils";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -23,15 +29,16 @@ type Dep = { start_date: string; end_date: string; start_time: string; capacity:
 type Faq = { question: string; answer: string };
 type GalleryImg = { image_url: string; caption: string };
 type Day = {
-  title: string; description: string; image: string;
+  title: string; description: string; image: string; secondImage: string;
   // Per-day metrics surfaced on the public detail page (migration 0027).
   trek_distance: string; trek_duration: string;
   drive_distance: string; drive_duration: string;
   altitude_gain: string; altitude_loss: string; meals: string;
 };
 // A fresh itinerary day with every field blank.
-const blankDay = (): Day => ({
-  title: "", description: "", image: "",
+const blankDay = (): Day & { id: string } => ({
+  id: crypto.randomUUID(),
+  title: "", description: "", image: "", secondImage: "",
   trek_distance: "", trek_duration: "", drive_distance: "", drive_duration: "",
   altitude_gain: "", altitude_loss: "", meals: "",
 });
@@ -107,6 +114,9 @@ const SECTIONS = [
 export default function NewTrekForm() {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+  const [uploadingPdf, setUploadingPdf] = useState(false);
+  const [itineraryUploads, setItineraryUploads] = useState(0);
+  const onItineraryUpload = (uploading: boolean) => setItineraryUploads((count) => count + (uploading ? 1 : -1));
   const [error, setError] = useState<string | null>(null);
 
   const [title, setTitle] = useState("");
@@ -135,12 +145,12 @@ export default function NewTrekForm() {
   const [accommodation, setAccommodation] = useState("");
   const [fitnessCriteria, setFitnessCriteria] = useState("");
   const [brochureUrl, setBrochureUrl] = useState("");
-  const [notToMiss, setNotToMiss] = useState<string[]>([""]);
+  const [notToMiss, setNotToMiss] = useState([{ title: "", subtext: "" }]);
   const [notes, setNotes] = useState<string[]>([""]);
 
   const [inclusions, setInclusions] = useState<string[]>([""]);
   const [exclusions, setExclusions] = useState<string[]>([""]);
-  const [itinerary, setItinerary] = useState<Day[]>([]);
+  const [itinerary, setItinerary] = useState<(Day & { id: string })[]>([]);
   const [faqs, setFaqs] = useState<Faq[]>([]);
   const [gallery, setGallery] = useState<GalleryImg[]>([]);
   const [packages, setPackages] = useState<Pkg[]>([{ name: "Standard Batch", price: "", inclusions: "", cta_label: "Book Now" }]);
@@ -148,7 +158,7 @@ export default function NewTrekForm() {
   const [boardingDisclaimer, setBoardingDisclaimer] = useState("");
   const [deposit, setDeposit] = useState<DepositState>(DEFAULT_DEPOSIT);
   const [departures, setDepartures] = useState<Dep[]>([{ start_date: "", end_date: "", start_time: "", capacity: "30", price_override: "", status: "open" }]);
-  const setDay = (i: number, key: keyof Day, v: string) => setItinerary((prev) => prev.map((x, j) => (j === i ? { ...x, [key]: v } : x)));
+  const setDay = (id: string, key: keyof Day, value: string) => setItinerary((days) => days.map((day) => day.id === id ? { ...day, [key]: value } : day));
   const setFaq = (i: number, key: keyof Faq, v: string) => setFaqs((prev) => prev.map((x, j) => (j === i ? { ...x, [key]: v } : x)));
   const setGal = (i: number, key: keyof GalleryImg, v: string) => setGallery((prev) => prev.map((x, j) => (j === i ? { ...x, [key]: v } : x)));
 
@@ -164,7 +174,7 @@ export default function NewTrekForm() {
   const basicsCount = essentials.slice(0, 4).filter(Boolean).length + (Number(basePrice) > 0 ? 1 : 0);
   const sectionDone: Record<string, boolean> = {
     "s-basics": essentials.slice(0, 7).every(Boolean),
-    "s-itin": itinerary.some((d) => d.title.trim()),
+    "s-itin": itinerary.some((d) => d.title.trim()) || !!brochureUrl.trim(),
     "s-faq": faqs.some((q) => q.question.trim() && q.answer.trim()),
     "s-gallery": gallery.some((g) => g.image_url.trim()),
     "s-dates": departures.some((d) => d.start_date.trim()),
@@ -184,6 +194,7 @@ export default function NewTrekForm() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (uploadingPdf || itineraryUploads > 0) return;
     setBusy(true);
     setError(null);
     const clean = (arr: string[]) => arr.map((s) => s.trim()).filter(Boolean);
@@ -195,7 +206,7 @@ export default function NewTrekForm() {
       duration_days: durationDays || undefined,
       altitude, base_camp: baseCamp, best_season: bestSeason, group_size: groupSize, featured,
       suitable_age: suitableAge, accommodation, fitness_criteria: fitnessCriteria,
-      brochure_url: brochureUrl, not_to_miss: clean(notToMiss), notes: clean(notes),
+      brochure_url: brochureUrl, not_to_miss: saveTrekHighlights(notToMiss), notes: clean(notes),
       inclusions: clean(inclusions),
       exclusions: clean(exclusions),
       packages: packages
@@ -209,7 +220,7 @@ export default function NewTrekForm() {
       itinerary: itinerary
         .filter((d) => d.title.trim())
         .map((d) => ({
-          title: d.title.trim(), description: d.description, image: d.image,
+          title: d.title.trim(), description: d.description, image: [d.image, d.secondImage],
           trek_distance: d.trek_distance, trek_duration: d.trek_duration,
           drive_distance: d.drive_distance, drive_duration: d.drive_duration,
           altitude_gain: d.altitude_gain, altitude_loss: d.altitude_loss, meals: d.meals,
@@ -269,7 +280,7 @@ export default function NewTrekForm() {
               ))}
             </div>
             <Button type="button" variant="secondary" size="sm" onClick={() => router.push("/admin")}>Cancel</Button>
-            <Button type="submit" size="sm" disabled={busy}>{busy ? "Saving…" : "Save trek"}</Button>
+            <Button type="submit" size="sm" disabled={busy || uploadingPdf || itineraryUploads > 0}>{busy ? "Saving…" : "Save trek"}</Button>
           </div>
         </div>
       </div>
@@ -318,8 +329,8 @@ export default function NewTrekForm() {
                 <Field label="URL slug" hint="· auto from name"><input className={inp} value={slug} onChange={(e) => { setSlug(e.target.value); setSlugEdited(true); }} placeholder="harishchandragad-trek" /></Field>
               </div>
               <Field label="Card summary" required hint="· one line, shown on listings"><input className={inp} value={summary} onChange={(e) => setSummary(e.target.value)} placeholder="A weekend night trek to the Konkan Kada cliff." /></Field>
-              <Field label="Overview" hint="· full description on the trek page"><textarea className={`${inp} min-h-28`} value={overview} onChange={(e) => setOverview(e.target.value)} /></Field>
-              <div className="grid gap-4 sm:grid-cols-2">
+              <TrekAboutEditor value={overview} onChange={setOverview} />
+              <div className="grid items-start gap-4 sm:grid-cols-2">
                 <Field label="Hero image" required><ImageField className={inp} value={heroImage} onChange={setHeroImage} folder="treks" placeholder="/assets/img/... or upload" /></Field>
                 <Field label="Base price" required>
                   <div className="relative flex items-center">
@@ -366,8 +377,7 @@ export default function NewTrekForm() {
 
           <SectionCard id="s-notmiss" icon={<Star size={16} />} title="Not to miss" optional>
             <div className="space-y-4">
-              <ListRepeater items={notToMiss} setItems={setNotToMiss} placeholder="Konkan Kada cliff at sunrise" addLabel="Add highlight" />
-              <Field label="Brochure / itinerary PDF" hint="· URL"><input className={inp} value={brochureUrl} onChange={(e) => setBrochureUrl(e.target.value)} placeholder="https://… .pdf" /></Field>
+              <HighlightEditor items={notToMiss} onChange={setNotToMiss} inputClass={inp} />
               <Field label="Important notes" hint="· shown in the Trek Cost sidebar’s Important Note">
                 <ListRepeater items={notes} setItems={setNotes} placeholder="If travelling from Nagpur, check train availability first." addLabel="Add note" />
               </Field>
@@ -383,23 +393,26 @@ export default function NewTrekForm() {
 
           <SectionCard id="s-itin" icon={<Footprints size={16} />} title="Itinerary" optional>
             <div className="space-y-4">
+              <Field label="Itinerary PDF" hint="· max 5 MB"><ImageField value={brochureUrl} onChange={setBrochureUrl} itineraryPdf onUploading={setUploadingPdf} /></Field>
               <p className="-mt-1 text-[11.5px] text-gray-400">Day by day — shown on the public trek page.</p>
               {itinerary.map((d, i) => (
-                <div key={i} className="rounded-xl border border-line bg-slate-50/60 p-4">
+                <div key={d.id} className="rounded-xl border border-line bg-slate-50/60 p-4">
                   <div className="mb-3 flex items-center justify-between"><span className="text-xs font-bold text-ink">Day {i + 1}</span>
-                    <button type="button" onClick={() => setItinerary(itinerary.filter((_, j) => j !== i))} className="text-gray-400 transition hover:text-red-600"><Trash2 size={15} /></button></div>
+                    <button type="button" onClick={() => setItinerary((days) => days.filter((day) => day.id !== d.id))} className="text-gray-400 transition hover:text-red-600"><Trash2 size={15} /></button></div>
                   <div className="space-y-3">
-                    <Field label="Title"><input className={inp} value={d.title} onChange={(e) => setItinerary(itinerary.map((x, j) => j === i ? { ...x, title: e.target.value } : x))} placeholder="Base to summit" /></Field>
-                    <Field label="Description"><textarea className={`${inp} min-h-20`} value={d.description} onChange={(e) => setItinerary(itinerary.map((x, j) => j === i ? { ...x, description: e.target.value } : x))} /></Field>
-                    <Field label="Image" hint="· optional"><ImageField className={inp} value={d.image} onChange={(v) => setItinerary(itinerary.map((x, j) => j === i ? { ...x, image: v } : x))} folder="treks/itinerary" placeholder="/assets/img/... or upload" /></Field>
+                    <Field label="Title"><input className={inp} value={d.title} onChange={(e) => setDay(d.id, "title", e.target.value)} placeholder="Base to summit" /></Field>
+                    <TrekAboutEditor label="Description" accessibleLabel={`Day ${i + 1} description`} value={d.description}
+                      onChange={(description) => setDay(d.id, "description", description)} />
+                    <ItineraryPhotoFields photo1={d.image} photo2={d.secondImage} onChange={(field, url) => setDay(d.id, field, url)}
+                      onUploading={onItineraryUpload} inputClass={inp} />
                     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                      <Field label="Trek distance"><input className={inp} value={d.trek_distance} onChange={(e) => setDay(i, "trek_distance", e.target.value)} placeholder="6 km" /></Field>
-                      <Field label="Trek duration"><input className={inp} value={d.trek_duration} onChange={(e) => setDay(i, "trek_duration", e.target.value)} placeholder="4–5 hrs" /></Field>
-                      <Field label="Drive distance"><input className={inp} value={d.drive_distance} onChange={(e) => setDay(i, "drive_distance", e.target.value)} placeholder="180 km" /></Field>
-                      <Field label="Drive duration"><input className={inp} value={d.drive_duration} onChange={(e) => setDay(i, "drive_duration", e.target.value)} placeholder="5 hrs" /></Field>
-                      <Field label="Altitude gain"><input className={inp} value={d.altitude_gain} onChange={(e) => setDay(i, "altitude_gain", e.target.value)} placeholder="900 m" /></Field>
-                      <Field label="Altitude loss"><input className={inp} value={d.altitude_loss} onChange={(e) => setDay(i, "altitude_loss", e.target.value)} placeholder="0 m" /></Field>
-                      <div className="sm:col-span-2"><Field label="Meals"><input className={inp} value={d.meals} onChange={(e) => setDay(i, "meals", e.target.value)} placeholder="Dinner + Breakfast" /></Field></div>
+                      <Field label="Trek distance"><input className={inp} value={d.trek_distance} onChange={(e) => setDay(d.id, "trek_distance", e.target.value)} placeholder="6 km" /></Field>
+                      <Field label="Trek duration"><input className={inp} value={d.trek_duration} onChange={(e) => setDay(d.id, "trek_duration", e.target.value)} placeholder="4–5 hrs" /></Field>
+                      <Field label="Drive distance"><input className={inp} value={d.drive_distance} onChange={(e) => setDay(d.id, "drive_distance", e.target.value)} placeholder="180 km" /></Field>
+                      <Field label="Drive duration"><input className={inp} value={d.drive_duration} onChange={(e) => setDay(d.id, "drive_duration", e.target.value)} placeholder="5 hrs" /></Field>
+                      <Field label="Altitude gain"><input className={inp} value={d.altitude_gain} onChange={(e) => setDay(d.id, "altitude_gain", e.target.value)} placeholder="900 m" /></Field>
+                      <Field label="Altitude loss"><input className={inp} value={d.altitude_loss} onChange={(e) => setDay(d.id, "altitude_loss", e.target.value)} placeholder="0 m" /></Field>
+                      <div className="sm:col-span-2"><Field label="Meals"><input className={inp} value={d.meals} onChange={(e) => setDay(d.id, "meals", e.target.value)} placeholder="Dinner + Breakfast" /></Field></div>
                     </div>
                   </div>
                 </div>
@@ -500,7 +513,7 @@ export default function NewTrekForm() {
 
           <div className="flex justify-end gap-2">
             <Button type="button" variant="secondary" onClick={() => router.push("/admin")}>Cancel</Button>
-            <Button type="submit" disabled={busy}>{busy ? "Saving…" : "Save trek"}</Button>
+            <Button type="submit" disabled={busy || uploadingPdf || itineraryUploads > 0}>{busy ? "Saving…" : "Save trek"}</Button>
           </div>
         </main>
 

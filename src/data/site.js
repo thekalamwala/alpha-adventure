@@ -14,9 +14,10 @@ export const site = {
   location: "Nagpur, Maharashtra, India",
   email: "info@alphaadventures.in",
   phone: "+91 8180001597",
+  secondaryPhone: "+91 9403449240",
   whatsapp: "https://wa.me/918180001597",
-  rating: "4.8/5",
-  ratingNote: "rating from 5000+ trekkers",
+  rating: "4.9/5",
+  ratingNote: "from 775+ Google reviews",
   experience: "6+ years of trekking experience",
   social: {
     facebook: "https://www.facebook.com/",

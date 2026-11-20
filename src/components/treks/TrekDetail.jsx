@@ -8,11 +8,27 @@ import TrekCard from "@/components/ui/TrekCard";
 import DownloadItinerary from "./DownloadItinerary";
 import TrekHeroSlider from "./TrekHeroSlider";
 import RoutePricingCards, { RoutePricingCard } from "./RoutePricingCards";
+import TrekCallbackCard from "./TrekCallbackCard";
 import NotToMissSlider from "./NotToMissSlider";
 import { getTrekReviews } from "@/lib/reviews";
+import { trekAboutStyles, trekSectionHtml } from "@/lib/trekAbout";
+import { readItineraryPhotos } from "@/lib/itineraryPhotos";
 
 const rupees = (paise) => "₹" + (paise / 100).toLocaleString("en-IN");
 const cap = (s) => (s ? s[0].toUpperCase() + s.slice(1) : s);
+
+function itineraryDownloadUrl(trek) {
+  if (!trek.brochure_url) return null;
+  try {
+    const url = new URL(trek.brochure_url);
+    const storage = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL);
+    if (url.origin !== storage.origin || !/^\/storage\/v1\/object\/public\/media\/treks\/itinerary-pdfs\/[0-9a-f-]{36}\.pdf$/.test(url.pathname)) return null;
+    url.searchParams.set("download", `${trek.slug}-itinerary.pdf`);
+    return url.href;
+  } catch {
+    return null;
+  }
+}
 
 // Rating stars (filled + hollow), matches the amber rating used elsewhere.
 const Stars = ({ n = 0 }) => {
@@ -55,6 +71,7 @@ function Fact({ icon, label, value, href }) {
 // Trek detail in the legacy theme skin (mirrors the trek-detail template),
 // driven by a single joined trek object from Supabase.
 export default async function TrekDetail({ trek }) {
+  const itineraryUrl = itineraryDownloadUrl(trek);
   const reviews = await getTrekReviews(trek.id);
   const durationLabel = trek.duration_days ? `${trek.duration_days} Day${trek.duration_days > 1 ? "s" : ""}` : null;
   const bookHref = `/book/${trek.slug}`;
@@ -63,8 +80,8 @@ export default async function TrekDetail({ trek }) {
   const mapsHref = basecampLabel
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(basecampLabel)}`
     : null;
-  // Hero slider: hero image first, then unique gallery photos.
-  const heroImages = [...new Set([trek.hero_image, ...trek.gallery.map((g) => g.image_url)].filter(Boolean))];
+  const extraHeroImages = trek.hero_slides ?? trek.gallery.map((g) => g.image_url);
+  const heroImages = [...new Set([trek.hero_image, ...extraHeroImages].filter(Boolean))];
 
   const sections = [];
   sections.push({
@@ -96,9 +113,8 @@ export default async function TrekDetail({ trek }) {
     label: "About",
     node: (
       <div className="package-info-wrap">
-        <div id="about-trek-content" className="about-content">
-          <p>{trek.overview || trek.summary}</p>
-        </div>
+        <div id="about-trek-content" className={`about-content text-justify ${trekAboutStyles}`}
+          dangerouslySetInnerHTML={{ __html: trekSectionHtml(trek.overview || trek.summary || "") }} />
       </div>
     ),
   });
@@ -106,6 +122,7 @@ export default async function TrekDetail({ trek }) {
     sections.push({
       id: "not-to-miss",
       label: "Not to Miss",
+      badge: "Highlights",
       node: <NotToMissSlider items={trek.not_to_miss} />,
     });
   }
@@ -138,7 +155,7 @@ export default async function TrekDetail({ trek }) {
               body: (
                 <>
                   {dayChips(d).length > 0 && (
-                    <div className="mb-4 grid grid-cols-4 gap-2">
+                    <div className="mb-4 grid grid-cols-4 gap-2 pt-3">
                       {dayChips(d).map((m) => (
                         <span key={m.label} className="inline-flex min-w-0 items-center justify-center gap-1.5 rounded-full border border-line/70 bg-page px-2.5 py-1.5 text-xs">
                           <i className={`bi ${m.icon} shrink-0 text-primary`} />
@@ -148,8 +165,13 @@ export default async function TrekDetail({ trek }) {
                       ))}
                     </div>
                   )}
-                  {d.description && <p className="leading-relaxed text-gray-600">{d.description}</p>}
-                  {d.image && <img src={d.image} alt={d.title} className="mt-3.5 block h-[220px] w-full max-w-[460px] rounded-xl2 object-cover" />}
+                  {d.description && <div className={`leading-relaxed text-gray-600 ${trekAboutStyles}`}
+                    dangerouslySetInnerHTML={{ __html: trekSectionHtml(d.description) }} />}
+                  {d.image && <div className="mt-3.5 grid grid-cols-2 gap-4 [&>img:only-child]:col-span-2">
+                    {readItineraryPhotos(d.image).map((photo, index) => (
+                      <img key={index} src={photo} alt={d.title} className="block h-28 w-full max-w-[460px] rounded-xl2 object-cover sm:h-[220px]" />
+                    ))}
+                  </div>}
                 </>
               ),
             }))}
@@ -165,16 +187,16 @@ export default async function TrekDetail({ trek }) {
       node: (
         <div className="grid gap-8 sm:grid-cols-2">
           <div>
-            <h4 className="mb-4">What&apos;s Included</h4>
-            <ul className="space-y-3">
+            <h4 className="mb-4 text-lg font-semibold text-ink">What&apos;s Included</h4>
+            <ul className="space-y-3 pl-0">
               {trek.inclusions.map((t, i) => (
                 <li key={i} className="flex items-start gap-2.5 text-gray-600"><i className="bi bi-check-circle-fill mt-0.5 text-green-600" /> {t}</li>
               ))}
             </ul>
           </div>
           <div>
-            <h4 className="mb-4">Not Included</h4>
-            <ul className="space-y-3">
+            <h4 className="mb-4 text-lg font-semibold text-ink">Not Included</h4>
+            <ul className="space-y-3 pl-0">
               {trek.exclusions.map((t, i) => (
                 <li key={i} className="flex items-start gap-2.5 text-gray-600"><i className="bi bi-x-circle-fill mt-0.5 text-red-500" /> {t}</li>
               ))}
@@ -310,13 +332,13 @@ export default async function TrekDetail({ trek }) {
         </div>
       </div>
 
-      <div className="package-details-page pt-100 mb-100">
+      <div className="package-details-page mb-100">
         <div className="container">
           {/* SECTION NAV — full-width bar above the two-column row; the cost
               card sits below it in the right column. */}
           <TrekSectionNav
             sections={sections.filter((s) => s.id !== "booking")}
-            trailing={<DownloadItinerary trek={trek} itinerary={trek.itinerary} />}
+            trailing={itineraryUrl && <DownloadItinerary trek={{ brochure_url: itineraryUrl }} label="Download Itinerary" />}
           />
 
           <div className="row g-lg-4 gy-5 justify-content-between">
@@ -326,6 +348,7 @@ export default async function TrekDetail({ trek }) {
                   .filter((s) => s.id !== "booking")
                   .map((s) => (
                     <section key={s.id} id={`section-${s.id}`} className="scroll-mt-28">
+                      {s.badge && <span className="mb-2 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">{s.badge}</span>}
                       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                         <h3 className="text-2xl font-bold text-ink">{s.label}</h3>
                         {s.action}
@@ -340,8 +363,10 @@ export default async function TrekDetail({ trek }) {
               <div className="lg:sticky lg:top-[110px]">
                 {/* TREK COST — sidebar, under the booking card */}
                 <div id="section-trek-cost">
-                  <RoutePricingCard slug={trek.slug} bookHref={bookHref} variant="trek" basePrice={trek.base_price} notes={trek.notes} />
+                  <RoutePricingCard slug={trek.slug} bookHref={bookHref} basePrice={trek.base_price}
+                    groupSize={trek.group_size} inclusions={trek.inclusions} />
                 </div>
+                <TrekCallbackCard trekName={trek.title} />
               </div>
             </div>
           </div>

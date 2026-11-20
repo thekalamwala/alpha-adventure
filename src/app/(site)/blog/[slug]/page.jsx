@@ -45,7 +45,7 @@ export default async function BlogPostPage(props) {
               {new Date(post.published_at).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
             </span>
           )}
-          <h1 className="max-w-3xl text-3xl font-bold sm:text-4xl">{post.title}</h1>
+          <h1 className="page-hero-title max-w-3xl">{post.title}</h1>
           {post.excerpt && <p className="mt-3 max-w-2xl text-white/80">{post.excerpt}</p>}
         </div>
       </section>

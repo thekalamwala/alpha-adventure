@@ -1,20 +1,18 @@
 import fs from "fs";
 import path from "path";
 import ShopScripts from "@/components/ShopScripts";
-
-const shopHtml = fs.readFileSync(
-  path.join(process.cwd(), "src/data/orig-shop.html"),
-  "utf8"
-);
+import { getShopCatalog, renderShopCatalog, shopTemplate } from "@/lib/shopCatalogServer";
 const shopInit = fs.readFileSync(
   path.join(process.cwd(), "src/data/shop-init.js"),
   "utf8"
 );
 
 export const metadata = { title: "Trail Store" };
+export const revalidate = 300;
 
-// Serves the original shop page body verbatim.
-export default function ShopPage() {
+export default async function ShopPage() {
+  const catalog = await getShopCatalog();
+  const shopHtml = catalog.custom ? renderShopCatalog(catalog.products) : shopTemplate;
   return (
     <>
       <div

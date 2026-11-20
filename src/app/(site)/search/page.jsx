@@ -31,8 +31,9 @@ export default async function SearchPage(props) {
         title={q ? `Results for “${q}”` : "Search treks"}
         crumb="Search"
         subtitle="Find your next trek by name, fort or place."
+        fullHeight
       />
-      <div className="container-px py-14">
+      <div className="container-px pt-4 pb-14 sm:pt-6">
         {!q ? (
           <p className="text-gray-600">Type a trek, fort or place to search. <Link href="/treks" className="font-semibold text-primary hover:underline">Or browse all treks →</Link></p>
         ) : results.length === 0 ? (
@@ -42,8 +43,8 @@ export default async function SearchPage(props) {
           </div>
         ) : (
           <>
-            <p className="mb-6 text-sm text-gray-500">{results.length} trek{results.length > 1 ? "s" : ""} found</p>
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <p className="mb-4 text-sm text-gray-500">{results.length} trek{results.length > 1 ? "s" : ""} found</p>
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {results.map((t) => (
                 <TrekCard key={t.slug} trek={t} href={t.href} />
               ))}

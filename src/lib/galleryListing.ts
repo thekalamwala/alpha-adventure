@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { publicClient } from "@/lib/seo";
+import { gallerySeasonPhotosSchema, type GallerySeasonPhotos } from "@/lib/gallerySeasonPhotos";
 
 export type GalleryAlbum = {
   slug: string;
@@ -62,7 +63,7 @@ export async function getGalleryAlbums(): Promise<GalleryAlbum[]> {
 
 // React.cache: called from generateMetadata and the page body - dedupe.
 export const getGalleryAlbum = cache(loadGalleryAlbum);
-async function loadGalleryAlbum(slug: string): Promise<GalleryAlbum | null> {
+async function loadGalleryAlbum(slug: string): Promise<(GalleryAlbum & { seasonPhotos: GallerySeasonPhotos | null }) | null> {
   const supabase = publicClient();
   const { data } = await supabase
     .from("gallery_albums")
@@ -73,6 +74,12 @@ async function loadGalleryAlbum(slug: string): Promise<GalleryAlbum | null> {
     .maybeSingle();
   const album = (data ?? null) as Omit<GalleryAlbum, "trip_type"> | null;
   if (!album) return null;
-  const types = await withTripType([album]);
-  return { ...album, trip_type: album.subtitle ?? types.get(album.slug) ?? fallbackType(album.slug) };
+  const [types, seasonal] = await Promise.all([
+    withTripType([album]),
+    supabase.from("gallery_albums").select("season_photos").eq("slug", slug)
+      .eq("status", "published").is("deleted_at", null).maybeSingle(),
+  ]);
+  const photos = gallerySeasonPhotosSchema.safeParse(seasonal.data?.season_photos);
+  return { ...album, trip_type: album.subtitle ?? types.get(album.slug) ?? fallbackType(album.slug),
+    seasonPhotos: photos.success ? photos.data : null };
 }

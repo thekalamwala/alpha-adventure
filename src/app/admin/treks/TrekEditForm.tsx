@@ -1,5 +1,11 @@
 "use client";
 
+import TrekAboutEditor from "./TrekAboutEditor";
+import ItineraryPhotoFields from "./ItineraryPhotoFields";
+import { readItineraryPhotos } from "@/lib/itineraryPhotos";
+import HighlightEditor from "./HighlightEditor";
+import { readTrekHighlight, saveTrekHighlights } from "@/lib/trekHighlights";
+
 import { revealOnMount } from "@/lib/utils";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -21,15 +27,16 @@ type Pkg = { name: string; price: string; inclusions: string; cta_label: string 
 type Faq = { question: string; answer: string };
 type GalleryImg = { image_url: string; caption: string };
 type Day = {
-  title: string; description: string; image: string;
+  title: string; description: string; image: string; secondImage: string;
   // Per-day metrics surfaced on the public detail page (migration 0027).
   trek_distance: string; trek_duration: string;
   drive_distance: string; drive_duration: string;
   altitude_gain: string; altitude_loss: string; meals: string;
 };
 // A fresh itinerary day with every field blank.
-const blankDay = (): Day => ({
-  title: "", description: "", image: "",
+const blankDay = (): Day & { id: string } => ({
+  id: crypto.randomUUID(),
+  title: "", description: "", image: "", secondImage: "",
   trek_distance: "", trek_duration: "", drive_distance: "", drive_duration: "",
   altitude_gain: "", altitude_loss: "", meals: "",
 });
@@ -84,6 +91,7 @@ function SectionCard({ id, icon, title, optional, children }: {
 
 const SECTIONS = [
   { id: "s-basics", label: "Essentials" },
+  { id: "s-hero-slides", label: "Hero slides" },
   { id: "s-facts", label: "Trek facts" },
   { id: "s-highlights", label: "Not to miss" },
   { id: "s-incl", label: "Inclusions" },
@@ -97,6 +105,7 @@ const SECTIONS = [
 
 export type TrekEditInitial = {
   slug: string; title: string; summary: string; overview: string; hero_image: string;
+  hero_slides?: string[] | null;
   price: string; difficulty: string; status: string; group: string; tags: string; badge: string;
   region: string; location: string; state: string; duration_days: string; altitude: string;
   base_camp: string; best_season: string; group_size: string; featured: boolean;
@@ -104,7 +113,7 @@ export type TrekEditInitial = {
   brochure_url: string; suitable_age: string; accommodation: string; fitness_criteria: string;
   not_to_miss: string[];
   notes: string[];
-  inclusions: string[]; exclusions: string[]; packages: Pkg[]; itinerary: Day[]; faqs: Faq[]; gallery: GalleryImg[];
+  inclusions: string[]; exclusions: string[]; packages: Pkg[]; itinerary: Omit<Day, "secondImage">[]; faqs: Faq[]; gallery: GalleryImg[];
   // Boarding locations (migration 0029), max 4.
   boarding: BoardingRow[]; boarding_disclaimer: string;
   // Deposit / split payment (migration 0030).
@@ -114,22 +123,34 @@ export type TrekEditInitial = {
 export default function TrekEditForm({ initial }: { initial: TrekEditInitial }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+  const [uploadingPdf, setUploadingPdf] = useState(false);
+  const [itineraryUploads, setItineraryUploads] = useState(0);
+  const onItineraryUpload = (uploading: boolean) => setItineraryUploads((count) => count + (uploading ? 1 : -1));
   const [error, setError] = useState<string | null>(null);
   const [f, setF] = useState(initial);
   const set = (k: keyof TrekEditInitial, v: string | boolean) => setF((p) => ({ ...p, [k]: v }));
   const [inclusions, setInclusions] = useState<string[]>(initial.inclusions.length ? initial.inclusions : [""]);
   const [exclusions, setExclusions] = useState<string[]>(initial.exclusions.length ? initial.exclusions : [""]);
-  const [notToMiss, setNotToMiss] = useState<string[]>(initial.not_to_miss.length ? initial.not_to_miss : [""]);
+  const [notToMiss, setNotToMiss] = useState(() => (initial.not_to_miss.length ? initial.not_to_miss : [""]).map(readTrekHighlight));
   const [notes, setNotes] = useState<string[]>(initial.notes.length ? initial.notes : [""]);
   const [packages, setPackages] = useState<Pkg[]>(initial.packages);
-  const [itinerary, setItinerary] = useState<Day[]>(initial.itinerary);
+  const [itinerary, setItinerary] = useState(() => initial.itinerary.map((day, index) => {
+    const [image = "", secondImage = ""] = readItineraryPhotos(day.image);
+    return { ...day, id: String(index), image, secondImage };
+  }));
   const [faqs, setFaqs] = useState<Faq[]>(initial.faqs);
   const [gallery, setGallery] = useState<GalleryImg[]>(initial.gallery);
+  const [initialHeroSlides] = useState(() =>
+    (initial.hero_slides ?? initial.gallery.map((photo) => photo.image_url))
+      .map((image, index) => ({ id: String(index), image })),
+  );
+  const [heroSlideEdits, setHeroSlideEdits] = useState<typeof initialHeroSlides>();
+  const heroSlides = heroSlideEdits ?? initialHeroSlides;
   const [boarding, setBoarding] = useState<BoardingRow[]>(initial.boarding);
   const [boardingDisclaimer, setBoardingDisclaimer] = useState(initial.boarding_disclaimer);
   const [deposit, setDeposit] = useState<DepositState>(initial.deposit);
-  const setDay = (i: number, key: keyof Day, v: string) =>
-    setItinerary((prev) => prev.map((x, j) => (j === i ? { ...x, [key]: v } : x)));
+  const setDay = (id: string, key: keyof Day, value: string) =>
+    setItinerary((days) => days.map((day) => day.id === id ? { ...day, [key]: value } : day));
   const setFaq = (i: number, key: keyof Faq, v: string) =>
     setFaqs((prev) => prev.map((x, j) => (j === i ? { ...x, [key]: v } : x)));
   const setGal = (i: number, key: keyof GalleryImg, v: string) =>
@@ -144,9 +165,10 @@ export default function TrekEditForm({ initial }: { initial: TrekEditInitial }) 
   const pct = Math.round((doneCount / essentials.length) * 100);
   const sectionDone: Record<string, boolean> = {
     "s-basics": essentials.every(Boolean),
-    "s-highlights": notToMiss.some((x) => x.trim()) || !!f.brochure_url.trim(),
+    "s-hero-slides": heroSlides.some((slide) => slide.image.trim()),
+    "s-highlights": notToMiss.some(({ title }) => title.trim()),
     "s-incl": inclusions.some((x) => x.trim()) || exclusions.some((x) => x.trim()),
-    "s-itin": itinerary.some((d) => d.title.trim()),
+    "s-itin": itinerary.some((d) => d.title.trim()) || !!f.brochure_url.trim(),
     "s-pkg": packages.some((p) => p.name.trim()),
     "s-boarding": boarding.some((b) => b.name.trim()),
     "s-deposit": deposit.type !== "none",
@@ -168,12 +190,14 @@ export default function TrekEditForm({ initial }: { initial: TrekEditInitial }) 
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (uploadingPdf || itineraryUploads > 0) return;
     setBusy(true);
     setError(null);
     const clean = (s: string) => s.split(/[\n,]/).map((x) => x.trim()).filter(Boolean);
     const list = (a: string[]) => a.map((x) => x.trim()).filter(Boolean);
     const payload = {
       title: f.title, summary: f.summary, overview: f.overview, hero_image: f.hero_image,
+      hero_slides: heroSlideEdits?.map((slide) => slide.image.trim()).filter(Boolean),
       base_price: f.price, difficulty: f.difficulty, status: f.status,
       group: f.group, tags: clean(f.tags), badge: f.badge,
       region: f.region, location: f.location, state: f.state,
@@ -182,7 +206,7 @@ export default function TrekEditForm({ initial }: { initial: TrekEditInitial }) 
       featured: f.featured,
       brochure_url: f.brochure_url, suitable_age: f.suitable_age,
       accommodation: f.accommodation, fitness_criteria: f.fitness_criteria,
-      not_to_miss: list(notToMiss),
+      not_to_miss: saveTrekHighlights(notToMiss),
       notes: list(notes),
       inclusions: list(inclusions),
       exclusions: list(exclusions),
@@ -190,7 +214,7 @@ export default function TrekEditForm({ initial }: { initial: TrekEditInitial }) 
         name: p.name.trim(), price: p.price, inclusions: clean(p.inclusions), cta_label: p.cta_label.trim() || "Book Now",
       })),
       itinerary: itinerary.filter((d) => d.title.trim()).map((d) => ({
-        title: d.title.trim(), description: d.description, image: d.image,
+        title: d.title.trim(), description: d.description, image: [d.image, d.secondImage],
         trek_distance: d.trek_distance, trek_duration: d.trek_duration,
         drive_distance: d.drive_distance, drive_duration: d.drive_duration,
         altitude_gain: d.altitude_gain, altitude_loss: d.altitude_loss, meals: d.meals,
@@ -239,7 +263,7 @@ export default function TrekEditForm({ initial }: { initial: TrekEditInitial }) 
               ))}
             </div>
             <Button type="button" variant="secondary" size="sm" onClick={() => router.push("/admin")}>Cancel</Button>
-            <Button type="submit" size="sm" disabled={busy}>{busy ? "Saving…" : "Save changes"}</Button>
+            <Button type="submit" size="sm" disabled={busy || uploadingPdf || itineraryUploads > 0}>{busy ? "Saving…" : "Save changes"}</Button>
           </div>
         </div>
       </div>
@@ -283,8 +307,8 @@ export default function TrekEditForm({ initial }: { initial: TrekEditInitial }) 
             <div className="space-y-4">
               <Field label="Trek name" required><input className={inp} value={f.title} onChange={(e) => set("title", e.target.value)} /></Field>
               <Field label="Card summary" required><input className={inp} value={f.summary} onChange={(e) => set("summary", e.target.value)} /></Field>
-              <Field label="Overview" hint="· full description"><textarea className={`${inp} min-h-28`} value={f.overview} onChange={(e) => set("overview", e.target.value)} /></Field>
-              <div className="grid gap-4 sm:grid-cols-2">
+              <TrekAboutEditor value={f.overview} onChange={(value) => set("overview", value)} />
+              <div className="grid items-start gap-4 sm:grid-cols-2">
                 <Field label="Hero image" required><ImageField className={inp} value={f.hero_image} onChange={(v) => set("hero_image", v)} folder="treks" placeholder="/assets/img/... or upload" /></Field>
                 <Field label="Base price" required>
                   <div className="relative flex items-center">
@@ -313,6 +337,30 @@ export default function TrekEditForm({ initial }: { initial: TrekEditInitial }) 
             </div>
           </SectionCard>
 
+          <SectionCard id="s-hero-slides" icon={<Images size={16} />} title="Hero slides" optional>
+            {initial.hero_slides === undefined ? (
+              <p className="text-xs text-gray-500">Hero slides are unavailable until the database supports them.</p>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-xs text-gray-500">The main Hero image is the first slide. Edit the images below to set a separate list for the slider.</p>
+                {heroSlides.map((slide, i) => (
+                  <div key={slide.id} className="flex items-end gap-2">
+                    <div className="min-w-0 flex-1">
+                      <Field label={`Additional slide ${i + 1}`}>
+                        <ImageField className={inp} value={slide.image} onChange={(image) => setHeroSlideEdits((current) => (current ?? initialHeroSlides).map((row) => row.id === slide.id ? { ...row, image } : row))} folder="treks/hero" placeholder="/assets/img/... or upload" />
+                      </Field>
+                    </div>
+                    <button type="button" aria-label={`Remove slide ${i + 1}`} onClick={() => setHeroSlideEdits((current) => (current ?? initialHeroSlides).filter((row) => row.id !== slide.id))} className="p-2 text-gray-400 hover:text-red-600"><Trash2 size={15} /></button>
+                  </div>
+                ))}
+                <button type="button" onClick={() => {
+                  const slide = { id: crypto.randomUUID(), image: "" };
+                  setHeroSlideEdits((current) => [...(current ?? initialHeroSlides), slide]);
+                }} className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-line px-3 py-2 text-sm font-semibold text-primary hover:bg-primary/5"><Plus size={15} /> Add slide</button>
+              </div>
+            )}
+          </SectionCard>
+
           <SectionCard id="s-facts" icon={<Compass size={16} />} title="Trek facts" optional>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Region"><input className={inp} value={f.region} onChange={(e) => set("region", e.target.value)} /></Field>
@@ -331,8 +379,7 @@ export default function TrekEditForm({ initial }: { initial: TrekEditInitial }) 
 
           <SectionCard id="s-highlights" icon={<Star size={16} />} title="Not to miss" optional>
             <div className="space-y-4">
-              <ListRepeater items={notToMiss} setItems={setNotToMiss} placeholder="Konkan Kada cliff at sunrise" addLabel="Add highlight" />
-              <Field label="Brochure / itinerary PDF" hint="· URL"><input className={inp} value={f.brochure_url} onChange={(e) => set("brochure_url", e.target.value)} placeholder="https://… .pdf" /></Field>
+              <HighlightEditor items={notToMiss} onChange={setNotToMiss} inputClass={inp} />
               <Field label="Important notes" hint="· shown in the Trek Cost sidebar’s Important Note">
                 <ListRepeater items={notes} setItems={setNotes} placeholder="If travelling from Nagpur, check train availability first." addLabel="Add note" />
               </Field>
@@ -348,23 +395,26 @@ export default function TrekEditForm({ initial }: { initial: TrekEditInitial }) 
 
           <SectionCard id="s-itin" icon={<Footprints size={16} />} title="Itinerary" optional>
             <div className="space-y-4">
+              <Field label="Itinerary PDF" hint="· max 5 MB"><ImageField value={f.brochure_url} onChange={(url) => set("brochure_url", url)} itineraryPdf onUploading={setUploadingPdf} /></Field>
               <p className="-mt-1 text-[11.5px] text-gray-400">Day by day — shown on the public trek page.</p>
               {itinerary.map((d, i) => (
-                <div key={i} className="rounded-xl border border-line bg-slate-50/60 p-4">
+                <div key={d.id} className="rounded-xl border border-line bg-slate-50/60 p-4">
                   <div className="mb-3 flex items-center justify-between"><span className="text-xs font-bold text-ink">Day {i + 1}</span>
-                    <button type="button" onClick={() => setItinerary(itinerary.filter((_, j) => j !== i))} className="text-gray-400 transition hover:text-red-600"><Trash2 size={15} /></button></div>
+                    <button type="button" onClick={() => setItinerary((days) => days.filter((day) => day.id !== d.id))} className="text-gray-400 transition hover:text-red-600"><Trash2 size={15} /></button></div>
                   <div className="space-y-3">
-                    <Field label="Title"><input className={inp} value={d.title} onChange={(e) => setItinerary(itinerary.map((x, j) => j === i ? { ...x, title: e.target.value } : x))} placeholder="Base to summit" /></Field>
-                    <Field label="Description"><textarea className={`${inp} min-h-20`} value={d.description} onChange={(e) => setItinerary(itinerary.map((x, j) => j === i ? { ...x, description: e.target.value } : x))} /></Field>
-                    <Field label="Image" hint="· optional"><ImageField className={inp} value={d.image} onChange={(v) => setItinerary(itinerary.map((x, j) => j === i ? { ...x, image: v } : x))} folder="treks/itinerary" placeholder="/assets/img/... or upload" /></Field>
+                    <Field label="Title"><input className={inp} value={d.title} onChange={(e) => setDay(d.id, "title", e.target.value)} placeholder="Base to summit" /></Field>
+                    <TrekAboutEditor label="Description" accessibleLabel={`Day ${i + 1} description`} value={d.description}
+                      onChange={(description) => setDay(d.id, "description", description)} />
+                    <ItineraryPhotoFields photo1={d.image} photo2={d.secondImage} onChange={(field, url) => setDay(d.id, field, url)}
+                      onUploading={onItineraryUpload} inputClass={inp} />
                     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                      <Field label="Trek distance"><input className={inp} value={d.trek_distance} onChange={(e) => setDay(i, "trek_distance", e.target.value)} placeholder="6 km" /></Field>
-                      <Field label="Trek duration"><input className={inp} value={d.trek_duration} onChange={(e) => setDay(i, "trek_duration", e.target.value)} placeholder="4–5 hrs" /></Field>
-                      <Field label="Drive distance"><input className={inp} value={d.drive_distance} onChange={(e) => setDay(i, "drive_distance", e.target.value)} placeholder="180 km" /></Field>
-                      <Field label="Drive duration"><input className={inp} value={d.drive_duration} onChange={(e) => setDay(i, "drive_duration", e.target.value)} placeholder="5 hrs" /></Field>
-                      <Field label="Altitude gain"><input className={inp} value={d.altitude_gain} onChange={(e) => setDay(i, "altitude_gain", e.target.value)} placeholder="900 m" /></Field>
-                      <Field label="Altitude loss"><input className={inp} value={d.altitude_loss} onChange={(e) => setDay(i, "altitude_loss", e.target.value)} placeholder="0 m" /></Field>
-                      <div className="sm:col-span-2"><Field label="Meals"><input className={inp} value={d.meals} onChange={(e) => setDay(i, "meals", e.target.value)} placeholder="Dinner + Breakfast" /></Field></div>
+                      <Field label="Trek distance"><input className={inp} value={d.trek_distance} onChange={(e) => setDay(d.id, "trek_distance", e.target.value)} placeholder="6 km" /></Field>
+                      <Field label="Trek duration"><input className={inp} value={d.trek_duration} onChange={(e) => setDay(d.id, "trek_duration", e.target.value)} placeholder="4–5 hrs" /></Field>
+                      <Field label="Drive distance"><input className={inp} value={d.drive_distance} onChange={(e) => setDay(d.id, "drive_distance", e.target.value)} placeholder="180 km" /></Field>
+                      <Field label="Drive duration"><input className={inp} value={d.drive_duration} onChange={(e) => setDay(d.id, "drive_duration", e.target.value)} placeholder="5 hrs" /></Field>
+                      <Field label="Altitude gain"><input className={inp} value={d.altitude_gain} onChange={(e) => setDay(d.id, "altitude_gain", e.target.value)} placeholder="900 m" /></Field>
+                      <Field label="Altitude loss"><input className={inp} value={d.altitude_loss} onChange={(e) => setDay(d.id, "altitude_loss", e.target.value)} placeholder="0 m" /></Field>
+                      <div className="sm:col-span-2"><Field label="Meals"><input className={inp} value={d.meals} onChange={(e) => setDay(d.id, "meals", e.target.value)} placeholder="Dinner + Breakfast" /></Field></div>
                     </div>
                   </div>
                 </div>
@@ -435,7 +485,7 @@ export default function TrekEditForm({ initial }: { initial: TrekEditInitial }) 
 
           <div className="flex justify-end gap-2">
             <Button type="button" variant="secondary" onClick={() => router.push("/admin")}>Cancel</Button>
-            <Button type="submit" disabled={busy}>{busy ? "Saving…" : "Save changes"}</Button>
+            <Button type="submit" disabled={busy || uploadingPdf || itineraryUploads > 0}>{busy ? "Saving…" : "Save changes"}</Button>
           </div>
         </main>
 

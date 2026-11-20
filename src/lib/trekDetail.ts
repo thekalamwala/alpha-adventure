@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { publicClient, abs, SITE_URL } from "@/lib/seo";
 import { canonicalPath } from "@/lib/sections";
+import { trekAboutText } from "@/lib/trekAbout";
 
 // Public read of a trek + all detail sections. Anon key + RLS (published,
 // non-deleted). Returns null when not found so the page can 404.
@@ -74,7 +75,7 @@ export const getTrekBySlug = cache(async (slug: string) => {
   const baseDayCols = "day_no,title,description,image";
   const extraDayCols = ",trek_distance,trek_duration,drive_distance,drive_duration,altitude_gain,altitude_loss,meals";
   const postCols = "slug,title,excerpt,published_at";
-  const [itinerary, inclusions, exclusions, packages, gallery, faqs, relevant, linkedPosts] =
+  const [itinerary, inclusions, exclusions, packages, gallery, faqs, relevant, linkedPosts, heroSlides] =
     await Promise.all([
       supabase
         .from("itinerary_days")
@@ -103,6 +104,7 @@ export const getTrekBySlug = cache(async (slug: string) => {
         .is("deleted_at", null)
         .order("published_at", { ascending: false })
         .limit(3),
+      supabase.from("treks").select("hero_slides").eq("id", trek.id).maybeSingle(),
     ]);
 
   // Blog: posts linked to this trek, else the latest published stories.
@@ -132,6 +134,7 @@ export const getTrekBySlug = cache(async (slug: string) => {
 
   return {
     ...trek,
+    hero_slides: (heroSlides.data?.hero_slides ?? null) as string[] | null,
     itinerary: dayRows ?? [],
     inclusions: (inclusions.data ?? []).map((r) => r.text),
     exclusions: (exclusions.data ?? []).map((r) => r.text),
@@ -153,7 +156,7 @@ export function trekJsonLd(trek: TrekDetailData) {
     "@context": "https://schema.org",
     "@type": "TouristTrip",
     name: trek.title,
-    description: trek.overview ?? trek.summary ?? undefined,
+    description: trek.overview ? trekAboutText(trek.overview) : trek.summary ?? undefined,
     image: trek.hero_image ? abs(trek.hero_image) : undefined,
     url: abs(path),
     touristType: trek.difficulty,
