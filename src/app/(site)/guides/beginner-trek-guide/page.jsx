@@ -1,5 +1,4 @@
 import Link from "next/link";
-import PageHero from "@/components/layout/PageHero";
 import BeginnerGuideNav from "@/components/BeginnerGuideNav";
 import { site } from "@/data/site";
 
@@ -180,7 +179,7 @@ function Section({ id, title, intro, children }) {
   return (
     <section
       id={id}
-      className="mt-12 scroll-mt-28 border-t border-line/70 pt-10 sm:mt-16 sm:pt-12"
+      className="mt-8 scroll-mt-28 border-t border-line/70 pt-7"
     >
       <h2 className="text-2xl font-bold leading-tight text-ink sm:text-[28px]">
         {title}
@@ -200,206 +199,229 @@ export default function BeginnerTrekGuidePage() {
 
   return (
     <>
-      <PageHero
-        title="Beginner Trek Guide"
-        crumb="Beginner Trek Guide"
-        subtitle="A practical, no-jargon guide to choosing your first route, avoiding the classic mistakes, and walking into the hills with confidence."
-      />
-
-      <BeginnerGuideNav />
-
-      <div className="bg-page pb-20 pt-10 sm:pb-24 sm:pt-14">
-        <div className="container-px mx-auto max-w-3xl">
-          {/* ── Intro ─────────────────────────────────────────────────── */}
-          <p className="text-[15px] leading-7 text-gray-600">
-            New to trekking? This guide covers everything you need to know before
-            your first trek, from choosing the right route to packing smart and
-            staying safe on the trail.
-          </p>
-
-          <dl className="mt-6 grid gap-x-[32px] gap-y-[16px] border-y border-line/70 py-6 sm:grid-cols-2">
-            {quickFacts.map((fact) => (
-              <div key={fact.label}>
-                <dt className="text-[13px] text-gray-500">{fact.label}</dt>
-                <dd className="mt-[2px] text-sm font-medium text-ink">
-                  {fact.value}
-                </dd>
-              </div>
-            ))}
-          </dl>
-
-          <p className="mt-6 text-[15px] leading-7 text-gray-600">
-            Ready to pick a date?{" "}
-            <Link href="/treks" className={linkClass}>
-              Browse upcoming treks
-            </Link>{" "}
-            or{" "}
-            <Link href="/travel-calendar" className={linkClass}>
-              view the trek calendar
-            </Link>
-            .
-          </p>
-
-          {/* ── Choosing your first trek ──────────────────────────────── */}
-          <Section
-            id="choosing-your-first-trek"
-            title="Choosing Your First Trek"
-            intro="Selecting the right trek is the most important decision you will make as a beginner. Here is what to look for when picking your first adventure."
-          >
-            <div className="mt-8 space-y-6">
-              {firstTreks.map((trek, index) => (
-                <div
-                  key={trek.title}
-                  className="grid gap-[6px] sm:grid-cols-[2rem_1fr] sm:gap-[16px]"
-                >
-                  <span className="text-[13px] font-medium tabular-nums text-gray-400">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-                  <div>
-                    <h3 className="text-lg font-semibold leading-snug text-ink">
-                      {trek.title}
-                    </h3>
-                    <p className="mt-2 text-[15px] leading-7 text-gray-600">
-                      {trek.body}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Section>
-
-          {/* ── Common beginner mistakes ──────────────────────────────── */}
-          <Section
-            id="common-beginner-mistakes"
-            title="Common Beginner Mistakes"
-            intro="Learn from others’ experiences. Here are the most frequent errors new trekkers make and how to avoid them."
-          >
-            <dl className="mt-8 divide-y divide-line/70 border-y border-line/70">
-              {mistakes.map((mistake, index) => (
-                <div
-                  key={mistake.title}
-                  className="grid gap-[6px] py-[18px] sm:grid-cols-[2rem_1fr] sm:gap-[16px]"
-                >
-                  <span className="text-[13px] font-medium tabular-nums text-gray-400">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-                  <div>
-                    <dt className="font-semibold leading-snug text-ink">
-                      {mistake.title}
-                    </dt>
-                    <dd className="mt-1 text-[15px] leading-7 text-gray-600">
-                      {mistake.body}
-                    </dd>
-                  </div>
-                </div>
-              ))}
-            </dl>
-          </Section>
-
-          {/* ── Glossary ──────────────────────────────────────────────── */}
-          <Section
-            id="trekking-glossary"
-            title="Trekking Glossary"
-            intro="New to trekking terms? Here are the essential words every beginner should know before hitting the trail."
-          >
-            <dl className="mt-8 grid gap-x-[40px] gap-y-6 sm:grid-cols-2">
-              {glossary.map((item) => (
-                <div key={item.term}>
-                  <dt className="font-semibold leading-snug text-ink">
-                    {item.term}
-                  </dt>
-                  <dd className="mt-1 text-[15px] leading-7 text-gray-600">
-                    {item.definition}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-          </Section>
-
-          {/* ── FAQ ───────────────────────────────────────────────────── */}
-          <Section
-            id="your-questions-answered"
-            title="Your Questions, Answered"
-            intro="Got questions? Here are answers to the most common concerns from first-time trekkers."
-          >
-            <div className="mt-8 border-t border-line/70">
-              {faqs.map((faq) => (
-                <details key={faq.question} className="group border-b border-line/70">
-                  <summary className="flex cursor-pointer list-none items-start justify-between gap-[16px] py-[16px] [&::-webkit-details-marker]:hidden">
-                    <span className="text-[15px] font-semibold leading-6 text-ink">
-                      {faq.question}
-                    </span>
-                    <i
-                      className="bi bi-plus mt-0.5 shrink-0 text-ink/50 transition-transform duration-200 group-open:rotate-45"
-                      aria-hidden="true"
-                    />
-                  </summary>
-                  <p className="pb-[16px] pr-10 text-[15px] leading-7 text-gray-600">
-                    {faq.answer}
-                  </p>
-                </details>
-              ))}
-            </div>
-          </Section>
-
-          {/* ── Before you go ─────────────────────────────────────────── */}
-          <Section
-            id="before-you-go"
-            title="Before You Go"
-            intro="Four short reads to make sure you are prepared once you have picked a trek."
-          >
-            <ul className="mt-8 divide-y divide-line/70 border-y border-line/70">
-              {resources.map((resource) => (
-                <li key={resource.title}>
-                  <Link
-                    href={resource.href}
-                    className="group flex items-center justify-between gap-[16px] py-[14px]"
-                  >
-                    <span>
-                      <span className="block font-semibold text-ink transition-colors group-hover:text-primary">
-                        {resource.title}
-                      </span>
-                      <span className="mt-[2px] block text-sm leading-6 text-gray-500">
-                        {resource.description}
-                      </span>
-                    </span>
-                    <i
-                      className="bi bi-arrow-right shrink-0 text-ink/40 transition-colors group-hover:text-primary"
-                      aria-hidden="true"
-                    />
-                  </Link>
-                </li>
-              ))}
+      <link rel="stylesheet" href="/assets/css/legal.css" />
+      <section
+        className="breadcrumb-section"
+        style={{ backgroundImage: "linear-gradient(rgba(17, 15, 15, .55), rgba(17, 15, 15, .55)), url('/assets/img/innerpages/breadcrumb-bg1.jpg')" }}
+      >
+        <div className="container">
+          <div className="banner-content">
+            <h1>Beginner Trek Guide</h1>
+            <ul className="breadcrumb-list">
+              <li><Link href="/">Home</Link></li>
+              <li>Beginner Trek Guide</li>
             </ul>
-          </Section>
+          </div>
+        </div>
+      </section>
 
-          {/* ── Contact ───────────────────────────────────────────────── */}
-          <Section
-            id="contact"
-            title="Still unsure where to start?"
-            intro="Tell us your dates, fitness level, and what you want from the experience. We will help you pick the right first trek — no pressure, no jargon."
-          >
-            <p className="mt-4 text-[15px] leading-7 text-gray-600">
-              Call{" "}
-              <a href={phoneHref} className={linkClass}>
-                {site.phone}
-              </a>
-              , message us on{" "}
-              <a
-                href={site.whatsapp}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={linkClass}
-              >
-                WhatsApp
-              </a>
-              , or email{" "}
-              <a href={`mailto:${site.email}`} className={linkClass}>
-                {site.email}
-              </a>
-              .
-            </p>
-          </Section>
+      <div className="policy-page pt-80 mb-120">
+        <div className="container">
+          <div className="row justify-content-center">
+            <article className="col-lg-10">
+              <div className="wanderon-policy-wrapper">
+                <div className="policy-header-title">
+                  <i className="bi bi-compass" aria-hidden="true" />
+                  <h2>Beginner Trek Guide</h2>
+                </div>
+                <div className="rounded border-l-4 border-primary bg-[#fff8f0] px-5 py-4">
+                  A practical, no-jargon guide to choosing your first route, avoiding the classic mistakes, and walking into the hills with confidence.
+                </div>
+                {/* ── Intro ─────────────────────────────────────────────────── */}
+                <p className="mt-6 text-[15px] leading-7 text-gray-600">
+                  New to trekking? This guide covers everything you need to know before
+                  your first trek, from choosing the right route to packing smart and
+                  staying safe on the trail.
+                </p>
+
+                <dl className="mt-6 grid gap-x-[32px] gap-y-[16px] border-y border-line/70 py-6 sm:grid-cols-2">
+                  {quickFacts.map((fact) => (
+                    <div key={fact.label}>
+                      <dt className="text-[13px] text-gray-500">{fact.label}</dt>
+                      <dd className="mt-[2px] text-sm font-medium text-ink">
+                        {fact.value}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+
+                <p className="mt-6 text-[15px] leading-7 text-gray-600">
+                  Ready to pick a date?{" "}
+                  <Link href="/treks" className={linkClass}>
+                    Browse upcoming treks
+                  </Link>{" "}
+                  or{" "}
+                  <Link href="/travel-calendar" className={linkClass}>
+                    view the trek calendar
+                  </Link>
+                  .
+                </p>
+
+                <BeginnerGuideNav />
+
+                {/* ── Choosing your first trek ──────────────────────────────── */}
+                <Section
+                  id="choosing-your-first-trek"
+                  title="Choosing Your First Trek"
+                  intro="Selecting the right trek is the most important decision you will make as a beginner. Here is what to look for when picking your first adventure."
+                >
+                  <div className="mt-8 space-y-6">
+                    {firstTreks.map((trek, index) => (
+                      <div
+                        key={trek.title}
+                        className="grid gap-[6px] sm:grid-cols-[2rem_1fr] sm:gap-[16px]"
+                      >
+                        <span className="text-[13px] font-medium tabular-nums text-gray-400">
+                          {String(index + 1).padStart(2, "0")}
+                        </span>
+                        <div>
+                          <h3 className="text-lg font-semibold leading-snug text-ink">
+                            {trek.title}
+                          </h3>
+                          <p className="mt-2 text-[15px] leading-7 text-gray-600">
+                            {trek.body}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </Section>
+
+                {/* ── Common beginner mistakes ──────────────────────────────── */}
+                <Section
+                  id="common-beginner-mistakes"
+                  title="Common Beginner Mistakes"
+                  intro="Learn from others’ experiences. Here are the most frequent errors new trekkers make and how to avoid them."
+                >
+                  <dl className="mt-8 divide-y divide-line/70 border-y border-line/70">
+                    {mistakes.map((mistake, index) => (
+                      <div
+                        key={mistake.title}
+                        className="grid gap-[6px] py-[18px] sm:grid-cols-[2rem_1fr] sm:gap-[16px]"
+                      >
+                        <span className="text-[13px] font-medium tabular-nums text-gray-400">
+                          {String(index + 1).padStart(2, "0")}
+                        </span>
+                        <div>
+                          <dt className="font-semibold leading-snug text-ink">
+                            {mistake.title}
+                          </dt>
+                          <dd className="mt-1 text-[15px] leading-7 text-gray-600">
+                            {mistake.body}
+                          </dd>
+                        </div>
+                      </div>
+                    ))}
+                  </dl>
+                </Section>
+
+                {/* ── Glossary ──────────────────────────────────────────────── */}
+                <Section
+                  id="trekking-glossary"
+                  title="Trekking Glossary"
+                  intro="New to trekking terms? Here are the essential words every beginner should know before hitting the trail."
+                >
+                  <dl className="mt-8 grid gap-x-[40px] gap-y-6 sm:grid-cols-2">
+                    {glossary.map((item) => (
+                      <div key={item.term}>
+                        <dt className="font-semibold leading-snug text-ink">
+                          {item.term}
+                        </dt>
+                        <dd className="mt-1 text-[15px] leading-7 text-gray-600">
+                          {item.definition}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                </Section>
+
+                {/* ── FAQ ───────────────────────────────────────────────────── */}
+                <Section
+                  id="your-questions-answered"
+                  title="Your Questions, Answered"
+                  intro="Got questions? Here are answers to the most common concerns from first-time trekkers."
+                >
+                  <div className="mt-8 border-t border-line/70">
+                    {faqs.map((faq) => (
+                      <details key={faq.question} className="group border-b border-line/70">
+                        <summary className="flex cursor-pointer list-none items-start justify-between gap-[16px] py-[16px] [&::-webkit-details-marker]:hidden">
+                          <span className="text-[15px] font-semibold leading-6 text-ink">
+                            {faq.question}
+                          </span>
+                          <i
+                            className="bi bi-plus mt-0.5 shrink-0 text-ink/50 transition-transform duration-200 group-open:rotate-45"
+                            aria-hidden="true"
+                          />
+                        </summary>
+                        <p className="pb-[16px] pr-10 text-[15px] leading-7 text-gray-600">
+                          {faq.answer}
+                        </p>
+                      </details>
+                    ))}
+                  </div>
+                </Section>
+
+                {/* ── Before you go ─────────────────────────────────────────── */}
+                <Section
+                  id="before-you-go"
+                  title="Before You Go"
+                  intro="Four short reads to make sure you are prepared once you have picked a trek."
+                >
+                  <ul className="mt-8 divide-y divide-line/70 border-y border-line/70">
+                    {resources.map((resource) => (
+                      <li key={resource.title}>
+                        <Link
+                          href={resource.href}
+                          className="group flex items-center justify-between gap-[16px] py-[14px]"
+                        >
+                          <span>
+                            <span className="block font-semibold text-ink transition-colors group-hover:text-primary">
+                              {resource.title}
+                            </span>
+                            <span className="mt-[2px] block text-sm leading-6 text-gray-500">
+                              {resource.description}
+                            </span>
+                          </span>
+                          <i
+                            className="bi bi-arrow-right shrink-0 text-ink/40 transition-colors group-hover:text-primary"
+                            aria-hidden="true"
+                          />
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </Section>
+
+                {/* ── Contact ───────────────────────────────────────────────── */}
+                <Section
+                  id="contact"
+                  title="Still unsure where to start?"
+                  intro="Tell us your dates, fitness level, and what you want from the experience. We will help you pick the right first trek — no pressure, no jargon."
+                >
+                  <p className="mt-4 text-[15px] leading-7 text-gray-600">
+                    Call{" "}
+                    <a href={phoneHref} className={linkClass}>
+                      {site.phone}
+                    </a>
+                    , message us on{" "}
+                    <a
+                      href={site.whatsapp}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={linkClass}
+                    >
+                      WhatsApp
+                    </a>
+                    , or email{" "}
+                    <a href={`mailto:${site.email}`} className={linkClass}>
+                      {site.email}
+                    </a>
+                    .
+                  </p>
+                </Section>
+              </div>
+            </article>
+          </div>
         </div>
       </div>
     </>

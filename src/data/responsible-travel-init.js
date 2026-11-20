@@ -9,23 +9,22 @@
     if (!nav) return;
     var links = Array.prototype.slice.call(nav.querySelectorAll('a'));
     if (!links.length) return;
-    var ids = links.map(function (a) { return (a.getAttribute('href') || '').replace('#', ''); });
+    var ids = links.map(function (a) { return a.hash.slice(1); });
     var targets = ids.map(function (id) { return document.getElementById(id); }).filter(Boolean);
-    var OFFSET = 90;
 
     function setActive(id) {
-      links.forEach(function (a) { a.classList.toggle('active', a.getAttribute('href') === '#' + id); });
+      links.forEach(function (a) { a.classList.toggle('active', a.hash === '#' + id); });
     }
 
     links.forEach(function (a) {
       a.addEventListener('click', function (e) {
-        var id = (this.getAttribute('href') || '').replace('#', '');
+        var id = this.hash.slice(1);
         var el = document.getElementById(id);
         if (!el) return;
         e.preventDefault();
-        var y = el.getBoundingClientRect().top + window.pageYOffset - OFFSET;
+        var y = el.getBoundingClientRect().top + window.pageYOffset - nav.offsetHeight - 12;
         window.scrollTo({ top: y, behavior: 'smooth' });
-        history.replaceState(null, '', '#' + id);
+        history.replaceState(null, '', window.location.pathname + window.location.search + '#' + id);
       });
     });
 

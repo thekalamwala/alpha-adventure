@@ -96,7 +96,7 @@ export default function BeginnerGuideNav() {
       aria-label="On this page"
       className="sticky top-0 z-40 border-b border-line/70 bg-white"
     >
-      <div className="container-px mx-auto max-w-3xl">
+      <div>
         <div
           ref={barRef}
           className="flex gap-[24px] overflow-x-auto py-[12px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
@@ -106,7 +106,7 @@ export default function BeginnerGuideNav() {
             return (
               <a
                 key={link.id}
-                href={`#${link.id}`}
+                href={`/guides/beginner-trek-guide#${link.id}`}
                 data-id={link.id}
                 aria-current={isActive ? "location" : undefined}
                 onClick={(event) => handleClick(event, link.id)}

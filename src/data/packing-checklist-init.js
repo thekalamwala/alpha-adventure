@@ -6,13 +6,13 @@ var DESTS = ['spiti','kashmir','rajasthan','malvan'];
 var SEASON_LABELS = {all:'All seasons', spring:'Spring', summer:'Summer', monsoon:'Monsoon', postmonsoon:'Post Monsoon', autumn:'Autumn', winter:'Winter'};
 var DEST_LABELS = {spiti:'Spiti', kashmir:'Kashmir', rajasthan:'Rajasthan', malvan:'Malvan'};
 var SECTIONS = [
-  ['clothing','Clothing (Upper and Lower Body)'],
-  ['footwear','Footwear'],
-  ['gear','Accessories and Gear'],
-  ['toiletries','Toiletries and Hygiene'],
-  ['firstaid','First Aid and Medical Kit'],
-  ['docs','Documents and Cash'],
-  ['misc','Food and Other Items']
+  ['clothing','Clothing (Upper and Lower Body)','tag-fill'],
+  ['footwear','Footwear','signpost-2-fill'],
+  ['gear','Accessories and Gear','compass-fill'],
+  ['toiletries','Toiletries and Hygiene','droplet-fill'],
+  ['firstaid','First Aid and Medical Kit','heart-pulse-fill'],
+  ['docs','Documents and Cash','wallet2'],
+  ['misc','Food and Other Items','box-seam-fill']
 ];
 
 function I(t, req, tags, rent){ return {t:t, req:req || '', tags:tags || [], rent:!!rent}; }
@@ -413,11 +413,80 @@ var DATA = {
   v.kashmir = k;
 })();
 
-var state = {cat:'weekend', season:'all', dest:'spiti'};
+DATA = Object.assign({
+  general: {
+    label: 'General trekking checklist', sub: '42 items',
+    seasons: ['summer','winter','monsoon'],
+    seasonLabels: {all:'All Seasons',summer:'Summer Trek',winter:'Winter Trek',monsoon:'Monsoon Trek'},
+    sections: {
+      clothing: [
+        I('Quick-dry trekking t-shirts (3-4)', 'essential'),
+        I('Lightweight fleece jacket', 'essential'),
+        I('Padded or down jacket (sub-zero temperatures)', 'essential', ['winter']),
+        I('Waterproof & windproof windcheater/jacket', 'essential'),
+        I('Quick-dry trekking pants (2-3 pairs)', 'essential'),
+        I('Thermal innerwear (top & bottom)', 'essential', ['winter']),
+        I('Poncho or rain jacket & rain pants', 'essential', ['monsoon']),
+        I('Sun protection cap & neck balaclava', '', ['summer','winter']),
+        I('Woolen cap / beanie (covering ears)', 'essential', ['winter'])
+      ],
+      footwear: [
+        I('Trekking shoes with high ankle support & good grip', 'essential'),
+        I('Cotton socks (3-4 pairs)', 'essential'),
+        I('Thick woolen socks (2 pairs for night/cold)', 'essential', ['winter']),
+        I('Camp sandals or lightweight slippers'),
+        I('Waterproof gaiters (for snow or deep mud)', '', ['winter','monsoon'])
+      ],
+      gear: [
+        I('Main backpack (50-60 Liters) with waterproof rain cover', 'essential'),
+        I('Daypack (20-30 Liters, if offloading main bag)'),
+        I('Adjustable trekking poles (1 pair)', 'essential'),
+        I('LED Headlamp or Torch with spare batteries', 'essential'),
+        I('UV sunglasses (Category 3 or 4 protection)', 'essential', ['summer','winter']),
+        I('Water bottles or Hydration bladder (Min 2 Liters)', 'essential')
+      ],
+      toiletries: [
+        I('Sunscreen lotion (SPF 50+)', 'essential'),
+        I('Lip balm / vaseline with SPF', 'essential'),
+        I('Moisturizer & cold cream', '', ['winter']),
+        I('Hand sanitizer & biodegradable wet wipes', 'essential'),
+        I('Toothbrush & biodegradable toothpaste', 'essential'),
+        I('Quick-dry microfiber towel', 'essential'),
+        I('Toilet paper rolls (2 nos)', 'essential')
+      ],
+      firstaid: [
+        I('Personal prescription medications', 'essential'),
+        I('Band-aids, cotton rolls & sterile bandages', 'essential'),
+        I('Antiseptic cream & alcohol prep pads', 'essential'),
+        I('Pain relief gel/spray (Volini/Moov)'),
+        I('ORS (Oral Rehydration Salts) or Electral packets', 'essential'),
+        I('Altitude sickness pills (Diamox - consult doctor)', '', ['winter']),
+        I('Insect repellent spray/cream', '', ['monsoon'])
+      ],
+      docs: [
+        I('Original Government ID (Aadhaar, Passport, DL) + 2 photocopies', 'essential'),
+        I('Trek permit, declaration forms & medical certificate', 'essential'),
+        I('Passport-size photographs (3 copies)', 'essential'),
+        I('Cash (Adequate cash, as ATM & digital payments fail)', 'essential')
+      ],
+      misc: [
+        I('High-capacity power bank (10,000 - 20,000 mAh)', 'essential'),
+        I('Thick garbage bags (to pack and carry back waste)', 'essential'),
+        I('Energy snacks: dry fruits, chocolate bars, energy gel'),
+        I('Ziploc bags to protect electronics & documents', 'essential')
+      ]
+    }
+  }
+}, DATA);
+var state = {cat:'general', season:'all', dest:'spiti'};
 var store = {};
 var STORE_KEY = 'alphaPackingV4';
 try { store = JSON.parse(localStorage.getItem(STORE_KEY) || '{}') || {}; } catch(e) { store = {}; }
 function save(){ try { localStorage.setItem(STORE_KEY, JSON.stringify(store)); } catch(e) {} }
+var customItems = {};
+var CUSTOM_KEY = 'alphaPackingCustomV1';
+try { customItems = JSON.parse(localStorage.getItem(CUSTOM_KEY) || '{}') || {}; } catch(e) {}
+function saveCustom(){ try { localStorage.setItem(CUSTOM_KEY, JSON.stringify(customItems)); } catch(e) {} }
 
 function $(id){ return document.getElementById(id); }
 function cap(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
@@ -474,7 +543,13 @@ function buildSeasonChips(list){
   var sc = $('seasonChips'); sc.innerHTML = '';
   ['all'].concat(list).forEach(function(k){
     var b = document.createElement('button');
-    b.type = 'button'; b.className = 'ag-chip'; b.dataset.k = k; b.textContent = seasonLabel(k);
+    b.type = 'button'; b.className = 'ag-chip'; b.dataset.k = k;
+    var icons = {all:'grid-fill',summer:'sun-fill',winter:'snow',monsoon:'cloud-rain-fill'};
+    if (icons[k]) {
+      var icon = document.createElement('i'); icon.className = 'bi bi-' + icons[k]; icon.setAttribute('aria-hidden', 'true');
+      b.appendChild(icon);
+    }
+    b.appendChild(document.createTextNode(seasonLabel(k)));
     b.addEventListener('click', function(){ state.season = k; render(); });
     sc.appendChild(b);
   });
@@ -505,43 +580,94 @@ function setPressed(containerId, key){
   for (var i = 0; i < els.length; i++) els[i].setAttribute('aria-pressed', els[i].dataset.k === key ? 'true' : 'false');
 }
 
+function applySearch(){
+  var query = $('packingSearch').value.trim().toLowerCase();
+  var matches = 0;
+  document.querySelectorAll('#lists .ag-sec').forEach(function(section){
+    var found = 0;
+    section.querySelectorAll('.ag-items > li').forEach(function(row){
+      row.hidden = !row.querySelector('.txt').textContent.toLowerCase().includes(query);
+      if (!row.hidden) found++;
+    });
+    section.hidden = !!query && !found;
+    matches += found;
+  });
+  $('packingNoResults').hidden = !query || matches > 0;
+}
+
+function customForm(key, title, items){
+  var form = document.createElement('form'); form.className = 'packing-custom noprint';
+  var input = document.createElement('input'); input.type = 'text'; input.maxLength = 120;
+  var section = key.split('.').pop();
+  var names = {clothing:'clothing',footwear:'footwear',gear:'gear',toiletries:'toiletries',firstaid:'medical',docs:'document/cash'};
+  input.placeholder = 'Add custom ' + (names[section] ? names[section] + ' ' : '') + 'item…';
+  input.setAttribute('aria-label', 'Add item to ' + title);
+  var add = document.createElement('button'); add.type = 'submit'; add.textContent = '+';
+  add.setAttribute('aria-label', 'Add item to ' + title);
+  form.append(input, add);
+  form.addEventListener('submit', function(event){
+    event.preventDefault();
+    var name = input.value.trim();
+    if (!name) return;
+    items.push({id:crypto.randomUUID(), name:name});
+    customItems[key] = items;
+    saveCustom();
+    render();
+    document.querySelector('[data-sec="' + section + '"] .packing-custom input')?.focus();
+  });
+  return form;
+}
+
 function render(){
   var cur = current(), d = cur.d, top = cur.top;
+  var general = state.cat === 'general';
   var offered = top.seasons;
   if (state.season !== 'all' && offered.indexOf(state.season) === -1) state.season = 'all';
   buildSeasonChips(offered);
-  $('seasonHelp').textContent = top.monthGuide;
+  $('seasonHelp').hidden = general;
+  $('seasonHelp').textContent = top.monthGuide || '';
   setPressed('tabs', state.cat);
   setPressed('seasonChips', state.season);
   setPressed('terrainChips', state.dest);
   $('terrainWrap').hidden = state.cat !== 'backpacking';
 
   var sn = $('seasonNote');
-  sn.hidden = false;
-  if (state.season === 'all') {
+  sn.hidden = general;
+  if (general) {
+    sn.textContent = '';
+  } else if (state.season === 'all') {
     sn.textContent = 'Showing items for every season. Items that apply only in some seasons say so in brackets. Choose a season above to see only what applies to you.';
   } else {
     sn.textContent = d.seasonNotes[state.season];
   }
 
   var facts = $('facts'); facts.innerHTML = '';
-  d.facts.forEach(function(f){
+  facts.hidden = general;
+  (d.facts || []).forEach(function(f){
     var div = document.createElement('div'); div.className = 'ag-fact';
     var k = document.createElement('span'); k.className = 'k'; k.textContent = f[0];
     var v = document.createElement('span'); v.className = 'v'; v.textContent = f[1];
     div.appendChild(k); div.appendChild(v); facts.appendChild(div);
   });
-  $('catIntro').textContent = d.intro;
+  $('catIntro').hidden = general;
+  $('catIntro').textContent = d.intro || '';
 
   var lists = $('lists'); lists.innerHTML = '';
   SECTIONS.forEach(function(sec){
     var items = d.sections[sec[0]] || [];
+    var key = cur.key + '.' + sec[0];
+    var extras = Array.isArray(customItems[key]) ? customItems[key] : [];
     var shown = [];
     items.forEach(function(it, idx){ if (isVisible(it)) shown.push({it:it, id:cur.key + '.' + sec[0] + '.' + idx}); });
+    extras.forEach(function(extra){ shown.push({it:I(extra.name), id:key + '.custom.' + extra.id, extra:extra}); });
     if (!shown.length) return;
     var wrap = document.createElement('section'); wrap.className = 'ag-sec'; wrap.dataset.sec = sec[0];
     var head = document.createElement('div'); head.className = 'ag-sec-row';
-    var h = document.createElement('h3'); h.textContent = sec[1];
+    var titles = {clothing:'Clothing (Upper & Lower Body)',gear:'Gear & Equipment',toiletries:'Toiletries & Hygiene',firstaid:'First Aid & Medical Kit',docs:'Documents & Cash',misc:'Miscellaneous'};
+    var title = titles[sec[0]] || sec[1];
+    var h = document.createElement('h3');
+    var icon = document.createElement('i'); icon.className = 'bi bi-' + sec[2]; icon.setAttribute('aria-hidden', 'true');
+    h.append(icon, document.createTextNode(title));
     var c = document.createElement('span'); c.className = 'c'; c.dataset.count = '1';
     head.appendChild(h); head.appendChild(c); wrap.appendChild(head);
     if (d.secNotes && d.secNotes[sec[0]]) {
@@ -558,10 +684,17 @@ function render(){
       var lbl = labelFor(o.it);
       if (lbl) {
         var r = document.createElement('span');
-        r.className = 'ag-req' + (/^(required|must)/i.test(lbl) ? '' : ' opt');
-        r.textContent = ' (' + cap(lbl) + ')';
+        r.className = 'ag-req' + (/^(essential|required|must)/i.test(lbl) ? '' : ' opt');
+        r.textContent = ' ' + cap(lbl);
         txt.appendChild(r);
       }
+      if (general && state.season === 'all') o.it.tags.forEach(function(tag){
+        var badge = document.createElement('span');
+        badge.className = 'packing-season-badge';
+        badge.dataset.season = tag;
+        badge.textContent = ' ' + SEASON_LABELS[tag];
+        txt.appendChild(badge);
+      });
       if (o.it.rent) {
         var rt = document.createElement('span'); rt.className = 'ag-rent'; rt.textContent = 'Available on rent';
         txt.appendChild(rt);
@@ -571,19 +704,34 @@ function render(){
         save(); updateCounts();
       });
       lab.appendChild(cb); lab.appendChild(box); lab.appendChild(txt);
-      li.appendChild(lab); ul.appendChild(li);
+      li.appendChild(lab);
+      if (o.extra) {
+        var remove = document.createElement('button'); remove.type = 'button';
+        remove.className = 'packing-remove noprint'; remove.textContent = '×';
+        remove.setAttribute('aria-label', 'Remove ' + o.extra.name);
+        remove.addEventListener('click', function(){
+          customItems[key] = extras.filter(function(extra){ return extra.id !== o.extra.id; });
+          delete store[o.id];
+          saveCustom(); save(); render();
+        });
+        li.appendChild(remove);
+      }
+      ul.appendChild(li);
     });
-    wrap.appendChild(ul); lists.appendChild(wrap);
+    wrap.append(ul, customForm(key, title, extras)); lists.appendChild(wrap);
   });
 
   var av = $('avoid'); av.innerHTML = '';
+  av.hidden = general;
+  $('packingRelated').hidden = general;
   var ah = document.createElement('h3'); ah.textContent = 'Please leave these at home';
   var ap = document.createElement('p'); ap.textContent = 'They add weight, cause harm to the places we visit, or are not allowed.';
   var au = document.createElement('ul');
-  d.avoid.forEach(function(x){ var li = document.createElement('li'); li.textContent = x; au.appendChild(li); });
+  (d.avoid || []).forEach(function(x){ var li = document.createElement('li'); li.textContent = x; au.appendChild(li); });
   av.appendChild(ah); av.appendChild(ap); av.appendChild(au);
 
   updateCounts();
+  applySearch();
   updatePrintHead();
 }
 
@@ -600,7 +748,7 @@ function updateCounts(){
   var pct = total ? Math.round(done * 100 / total) : 0;
   $('pct').textContent = pct + '%';
   $('cnt').textContent = done + ' of ' + total + ' packed';
-  $('fill').style.width = pct + '%';
+  var fill = $('fill'); if (fill) fill.style.width = pct + '%';
 }
 
 function updatePrintHead(){
@@ -616,6 +764,7 @@ function updatePrintHead(){
 }
 
 ['fName','fTrip','fDate'].forEach(function(id){ $(id).addEventListener('input', updatePrintHead); });
+$('packingSearch').addEventListener('input', applySearch);
 $('btnPrint').addEventListener('click', function(){ updatePrintHead(); window.print(); });
 $('btnReset').addEventListener('click', function(){
   var prefix = current().key + '.';
