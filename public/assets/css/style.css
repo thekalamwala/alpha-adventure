@@ -4312,16 +4312,15 @@ header.style-1 .main-menu>ul>li.menu-item-has-children {
   visibility: hidden;
   opacity: 0;
   pointer-events: none;
-  transform: translateY(-5px);
+  transform: translate(-50%, -5px);
   transition: opacity 220ms ease, transform 220ms ease, visibility 0s linear 220ms;
   position: absolute;
-  left: 50%;
-  translate: -50% 0;
+  left: calc(50% + var(--mega-panel-offset, 0px));
   /* Touch the trigger (no dead-zone) so hover doesn't drop crossing into the
      panel; the box-shadow keeps the visual separation. */
   top: 100%;
-  width: 700px;
-  max-width: 96vw;
+  width: var(--mega-panel-width, 700px);
+  max-width: calc(100vw - 56px);
   background: #fff;
   border-radius: 14px;
   box-shadow: 0 16px 48px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.04);
@@ -4333,14 +4332,14 @@ header.style-1 .main-menu>ul>li.menu-item-has-children {
 }
 
 header.style-1 .main-menu > ul > li.mega-trigger {
-  position: static;
+  position: relative;
 }
 
 .mega-trigger:hover .aa-mega-panel {
   visibility: visible;
   opacity: 1;
   pointer-events: auto;
-  transform: translateY(0);
+  transform: translate(-50%, 0);
   transition-delay: 0s;
 }
 
@@ -4363,8 +4362,8 @@ header.style-1 .main-menu > ul > li.mega-trigger {
 }
 
 .mega-cats {
-  width: 200px;
-  min-width: 200px;
+  flex: 0 0 172px;
+  min-width: 0;
   padding: 8px 0;
   border-right: 1px solid rgba(0,0,0,0.06);
   background: #f9fafb;
@@ -4381,7 +4380,8 @@ header.style-1 .main-menu > ul > li.mega-trigger {
   color: #444 !important;
   text-decoration: none;
   transition: background 0.18s ease, color 0.18s ease;
-  white-space: nowrap;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
   position: relative;
   box-sizing: border-box;
 }
@@ -4473,7 +4473,7 @@ header.style-1 .main-menu > ul > li.mega-trigger {
 /* Destination cards grid */
 .mega-dest-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   margin-bottom: 10px;
 }
@@ -4518,32 +4518,16 @@ header.style-1 .main-menu > ul > li.mega-trigger {
   font-size: 12px;
   font-weight: 600;
   color: #1a1a2e;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
 }
 
 .mega-dest-brief {
   font-size: 10.5px;
   color: #999;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-top: 1px;
-}
-
-.mega-dest-card .mega-dest-arrow {
-  font-size: 13px;
-  opacity: 0;
-  transform: translateX(-4px);
-  transition: opacity 0.18s ease, transform 0.18s ease;
-  color: var(--primary-color1);
-  flex-shrink: 0;
-}
-
-.mega-dest-card:hover .mega-dest-arrow {
-  opacity: 1;
-  transform: translateX(0);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  margin-top: 3px;
 }
 
 /* Bottom CTA */

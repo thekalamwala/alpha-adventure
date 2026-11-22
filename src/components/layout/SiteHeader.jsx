@@ -39,7 +39,6 @@ function renderMenu(title, href, panels) {
                 <span class="mega-dest-name">${escapeHtml(item.title)}</span>
                 ${item.location || item.duration ? `<span class="mega-dest-brief">${escapeHtml(item.location || item.duration)}</span>` : ""}
               </div>
-              <span class="mega-dest-arrow" aria-hidden="true">&rarr;</span>
             </a>`;
           }).join("")}</div>
           <a href="${escapeHtml(p.href)}" class="mega-panel-cta">View all ${escapeHtml(p.title)} <span aria-hidden="true">&rarr;</span></a>

@@ -397,7 +397,7 @@ export default function NewTrekForm() {
               <p className="-mt-1 text-[11.5px] text-gray-400">Day by day — shown on the public trek page.</p>
               {itinerary.map((d, i) => (
                 <div key={d.id} className="rounded-xl border border-line bg-slate-50/60 p-4">
-                  <div className="mb-3 flex items-center justify-between"><span className="text-xs font-bold text-ink">Day {i + 1}</span>
+                  <div className="mb-3 flex items-center justify-between"><span className="text-xs font-bold text-ink">Day {i}</span>
                     <button type="button" onClick={() => setItinerary((days) => days.filter((day) => day.id !== d.id))} className="text-gray-400 transition hover:text-red-600"><Trash2 size={15} /></button></div>
                   <div className="space-y-3">
                     <Field label="Title"><input className={inp} value={d.title} onChange={(e) => setDay(d.id, "title", e.target.value)} placeholder="Base to summit" /></Field>

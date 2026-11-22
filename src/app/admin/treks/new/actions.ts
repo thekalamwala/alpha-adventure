@@ -191,7 +191,7 @@ export async function createTrek(raw: unknown): Promise<Result> {
   if (t.itinerary.length) {
     jobs.push(admin.from("itinerary_days").insert(
       t.itinerary.map((d, i) => ({
-        trek_id: trek.id, day_no: i + 1, title: d.title, description: blank(d.description), image: saveItineraryPhotos(d.image),
+        trek_id: trek.id, day_no: i, title: d.title, description: blank(d.description), image: saveItineraryPhotos(d.image),
         trek_distance: blank(d.trek_distance), trek_duration: blank(d.trek_duration),
         drive_distance: blank(d.drive_distance), drive_duration: blank(d.drive_duration),
         altitude_gain: blank(d.altitude_gain), altitude_loss: blank(d.altitude_loss), meals: blank(d.meals),

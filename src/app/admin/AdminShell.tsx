@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { useDeferredValue, useEffect, useRef, useState } from "react";
 import {
   LayoutDashboard, CalendarRange, Inbox, Mountain, Package, FileText, Image as ImageIcon,
@@ -243,10 +244,10 @@ export default function AdminShell({ data }: { data: AdminData }) {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-page text-ink">
+    <div className="flex min-h-screen bg-page text-ink">
       {/* level 1 — icon rail */}
-      <nav className="flex w-16 shrink-0 flex-col items-center gap-1 border-r border-line bg-ink py-4">
-        <div className="mb-3 grid h-10 w-10 place-items-center rounded-xl2 bg-primary text-white">
+      <nav className="sticky top-0 flex h-dvh w-16 shrink-0 flex-col items-center gap-1 self-start overflow-y-auto border-r border-line bg-ink py-4">
+        <div className="mb-3 grid h-10 w-10 shrink-0 place-items-center rounded-xl2 bg-primary text-white">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 20L9 8l4 7 2-3 6 8z" fill="#fff" /></svg>
         </div>
         {NAV.map((n) => {
@@ -255,7 +256,7 @@ export default function AdminShell({ data }: { data: AdminData }) {
           return (
             <button key={n.key} title={n.label}
               onClick={() => { setSection(n.key); setItem(n.items[0].key); }}
-              className={cn("grid h-11 w-11 place-items-center rounded-xl2 transition-colors",
+              className={cn("grid h-11 w-11 shrink-0 place-items-center rounded-xl2 transition-colors",
                 on ? "bg-white/15 text-white" : "text-white/50 hover:bg-white/10 hover:text-white")}>
               <Icon size={20} />
             </button>
@@ -264,9 +265,9 @@ export default function AdminShell({ data }: { data: AdminData }) {
       </nav>
 
       {/* level 2 — secondary nav */}
-      <aside className="hidden w-56 shrink-0 flex-col border-r border-line bg-white sm:flex">
-        <div className="flex h-16 items-center px-5 text-lg font-bold">{active.label}</div>
-        <div className="flex-1 space-y-0.5 px-3">
+      <aside className="sticky top-0 hidden h-dvh w-56 shrink-0 flex-col self-start border-r border-line bg-white sm:flex">
+        <div className="flex h-16 shrink-0 items-center px-5 text-lg font-bold">{active.label}</div>
+        <div className="min-h-0 flex-1 space-y-0.5 overflow-y-auto px-3">
           {active.items.map((it) => {
             const on = item === it.key;
             const Icon = PAGE_ICON[it.key];
@@ -281,7 +282,7 @@ export default function AdminShell({ data }: { data: AdminData }) {
             );
           })}
         </div>
-        <div className="border-t border-line p-3">
+        <div className="shrink-0 border-t border-line p-3">
           <div className="flex items-center gap-2 rounded-lg px-2 py-2">
             <div className="grid h-8 w-8 place-items-center rounded-full bg-primary/10 text-xs font-bold text-primary">SA</div>
             <div className="min-w-0"><div className="truncate text-sm font-semibold">Shubham</div><div className="truncate text-xs text-gray-400">Owner</div></div>
@@ -291,7 +292,7 @@ export default function AdminShell({ data }: { data: AdminData }) {
 
       {/* main */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="relative flex h-16 shrink-0 items-center gap-3 border-b border-line bg-white px-5">
+        <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-3 border-b border-line bg-white px-5">
           <div className="relative flex max-w-md flex-1 items-center rounded-lg border border-line bg-slate-50 focus-within:border-primary focus-within:bg-white">
             <Search size={16} className="ml-3 text-gray-400" />
             <input value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") actions.go("all-bookings"); }}
@@ -328,7 +329,7 @@ export default function AdminShell({ data }: { data: AdminData }) {
           <Button size="sm" onClick={() => setModal({ type: "booking" })}><Plus size={16} /> New booking</Button>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 p-6">
           <Page actions={actions} item={item} />
         </main>
       </div>
@@ -476,36 +477,32 @@ function Toolbar({
 }
 
 function RowMenu({ options }: { options: MenuItem[] }) {
-  const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   if (!options.length) return null;
   // Spinner + disabled trigger while the chosen action runs, so a row can't
   // fire a second delete/cancel before the first settles.
   const run = async (o: MenuItem) => {
-    setOpen(false);
     setBusy(true);
     try { await o.onClick(); } finally { setBusy(false); }
   };
   return (
-    <div className="relative">
-      <button onClick={() => setOpen((v) => !v)} disabled={busy} aria-busy={busy}
+    <DropdownMenu.Root modal={false}>
+      <DropdownMenu.Trigger disabled={busy} aria-busy={busy}
         className="grid h-7 w-7 place-items-center rounded-md text-gray-400 hover:bg-slate-100 hover:text-ink active:scale-95 disabled:cursor-wait" aria-label="Row actions">
         {busy ? <Loader2 size={16} className="animate-spin text-primary" /> : <MoreHorizontal size={16} />}
-      </button>
-      {open && (
-        <>
-          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-8 z-20 min-w-40 rounded-lg border border-line bg-white py-1 shadow-xl">
-            {options.map((o) => (
-              <button key={o.label} onClick={() => run(o)}
-                className={cn("block w-full px-3 py-2 text-left text-sm hover:bg-slate-100", o.tone === "danger" ? "text-red-600" : "text-ink")}>
-                {o.label}
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-    </div>
+      </DropdownMenu.Trigger>
+      <DropdownMenu.Portal>
+        <DropdownMenu.Content align="end" sideOffset={4} collisionPadding={8} hideWhenDetached
+          className="z-40 min-w-40 rounded-lg border border-line bg-white py-1 shadow-xl">
+          {options.map((o) => (
+            <DropdownMenu.Item key={o.label} onSelect={() => run(o)}
+              className={cn("cursor-pointer px-3 py-2 text-sm outline-none data-[highlighted]:bg-slate-100", o.tone === "danger" ? "text-red-600" : "text-ink")}>
+              {o.label}
+            </DropdownMenu.Item>
+          ))}
+        </DropdownMenu.Content>
+      </DropdownMenu.Portal>
+    </DropdownMenu.Root>
   );
 }
 
