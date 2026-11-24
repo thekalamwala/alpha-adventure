@@ -29,7 +29,7 @@ export type TrekDetail = {
   inclusions: string[];
   exclusions: string[];
   packages: { name: string; price: number; inclusions: string[]; ctaLabel: string }[];
-  itinerary: { title: string; description: string }[];
+  itinerary: { day_no: number; title: string; description: string }[];
   faqs: { question: string; answer: string }[];
   gallery: { imageUrl: string; caption: string }[];
   boarding: { name: string; subtext: string; price: number }[];
@@ -53,7 +53,7 @@ export async function getTrekDetail(
     admin.from("inclusions").select("text").eq("trek_id", t.id).order("sort"),
     admin.from("exclusions").select("text").eq("trek_id", t.id).order("sort"),
     admin.from("pricing_packages").select("name,price,inclusions,cta_label").eq("trek_id", t.id).order("sort"),
-    admin.from("itinerary_days").select("title,description").eq("trek_id", t.id).order("day_no"),
+    admin.from("itinerary_days").select("day_no,title,description").eq("trek_id", t.id).order("day_no"),
     admin.from("trek_faqs").select("question,answer").eq("trek_id", t.id).order("sort"),
     admin.from("trek_gallery").select("image_url,caption").eq("trek_id", t.id).order("sort_order"),
     admin.from("trek_departures").select("id", { count: "exact", head: true }).eq("trek_id", t.id).neq("status", "cancelled"),
@@ -86,7 +86,7 @@ export async function getTrekDetail(
       inclusions: (inc.data ?? []).map((r) => r.text),
       exclusions: (exc.data ?? []).map((r) => r.text),
       packages: (pkgs.data ?? []).map((p) => ({ name: p.name ?? "", price: toRupees(p.price), inclusions: p.inclusions ?? [], ctaLabel: p.cta_label ?? "Book Now" })),
-      itinerary: (iti.data ?? []).map((d) => ({ title: d.title ?? "", description: d.description ?? "" })),
+      itinerary: (iti.data ?? []).map((d) => ({ day_no: d.day_no, title: d.title ?? "", description: d.description ?? "" })),
       faqs: (faq.data ?? []).map((q) => ({ question: q.question ?? "", answer: q.answer ?? "" })),
       gallery: (gal.data ?? []).map((g) => ({ imageUrl: g.image_url ?? "", caption: g.caption ?? "" })),
       boarding: (brd.data ?? []).map((b) => ({ name: b.name ?? "", subtext: b.subtext ?? "", price: toRupees(b.price) })),
@@ -105,7 +105,7 @@ const rowSchema = z.object({
   hero_image: z.string().trim().min(1, "Hero image required"),
   hero_slides: z.array(z.string().trim().min(1)).optional(),
   base_price: z.coerce.number().min(0).max(10_000_000), // ₹
-  difficulty: z.enum(["beginner", "moderate", "difficult"]),
+  difficulty: z.enum(["beginner", "moderate", "difficult"]).nullable(),
   status: z.enum(["draft", "published"]),
   group: z.enum(["sahyadri", "himalayan", "central", "backpacking", "near-nagpur"]).optional().or(z.literal("")),
   tags: z.array(z.string().trim().min(1)).default([]),
@@ -136,6 +136,7 @@ const rowSchema = z.object({
     cta_label: z.string().trim().min(1).default("Book Now"),
   })).default([]),
   itinerary: z.array(z.object({
+    day_no: z.number().int().min(-32768).max(32767),
     title: z.string().trim().min(1),
     description: z.string().trim().optional().or(z.literal("")),
     image: z.union([z.string().trim(), z.array(z.string().trim()).max(maxItineraryPhotos, "An itinerary day can have up to two photos.")]).optional(),
@@ -146,7 +147,7 @@ const rowSchema = z.object({
     altitude_gain: z.string().trim().max(60).optional().or(z.literal("")),
     altitude_loss: z.string().trim().max(60).optional().or(z.literal("")),
     meals: z.string().trim().max(120).optional().or(z.literal("")),
-  })).default([]),
+  })).refine((days) => new Set(days.map((day) => day.day_no)).size === days.length, "Itinerary day numbers must be unique.").default([]),
   faqs: z.array(z.object({
     question: z.string().trim().min(1),
     answer: z.string().trim().min(1),
@@ -226,8 +227,8 @@ export async function updateTrek(slug: string, raw: unknown): Promise<Result> {
     t.packages.map((p, sort) => ({ trek_id: id, name: p.name, price: toPaise(p.price), inclusions: p.inclusions, cta_label: p.cta_label, sort })),
   ));
   if (t.itinerary.length) jobs.push(admin.from("itinerary_days").insert(
-    t.itinerary.map((d, i) => ({
-      trek_id: id, day_no: i, title: d.title, description: blank(d.description), image: saveItineraryPhotos(d.image),
+    t.itinerary.map((d) => ({
+      trek_id: id, day_no: d.day_no, title: d.title, description: blank(d.description), image: saveItineraryPhotos(d.image),
       trek_distance: blank(d.trek_distance), trek_duration: blank(d.trek_duration),
       drive_distance: blank(d.drive_distance), drive_duration: blank(d.drive_duration),
       altitude_gain: blank(d.altitude_gain), altitude_loss: blank(d.altitude_loss), meals: blank(d.meals),

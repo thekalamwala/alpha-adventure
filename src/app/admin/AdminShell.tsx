@@ -870,9 +870,9 @@ function TrekDetailModal({ detail, onClose }: { detail: TrekDetail | null; onClo
             {detail.itinerary.length > 0 && (
               <DetailBox title={`Itinerary (${detail.itinerary.length} day${detail.itinerary.length === 1 ? "" : "s"})`} className="mt-4">
                 <ol className="space-y-2">
-                  {detail.itinerary.map((d, i) => (
-                    <li key={i} className="text-sm">
-                      <span className="font-medium text-ink">Day {i + 1}: {d.title}</span>
+                  {detail.itinerary.map((d) => (
+                    <li key={d.day_no} className="text-sm">
+                      <span className="font-medium text-ink">Day {d.day_no}: {d.title}</span>
                       {d.description && <div className={`mt-0.5 text-gray-500 ${trekAboutStyles}`}
                         dangerouslySetInnerHTML={{ __html: trekAboutHtml(d.description) }} />}
                     </li>

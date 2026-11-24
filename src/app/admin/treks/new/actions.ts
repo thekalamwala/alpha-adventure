@@ -38,7 +38,7 @@ const trekSchema = z.object({
   overview: z.string().trim().min(1, "Overview required"),
   hero_image: z.string().trim().min(1, "Hero image required"),
   base_price: rupees,
-  difficulty: z.enum(["beginner", "moderate", "difficult"]),
+  difficulty: z.enum(["beginner", "moderate", "difficult"]).nullable(),
   status: z.enum(["draft", "published"]).default("draft"),
   // listing membership
   group: z.enum(["sahyadri", "himalayan", "central", "backpacking", "near-nagpur"]).optional().or(z.literal("")),
@@ -66,6 +66,7 @@ const trekSchema = z.object({
   exclusions: z.array(z.string().trim().min(1)).default([]),
   packages: z.array(packageSchema).default([]),
   itinerary: z.array(z.object({
+    day_no: z.number().int().min(-32768).max(32767),
     title: z.string().trim().min(1),
     description: z.string().trim().optional().or(z.literal("")),
     image: z.union([z.string().trim(), z.array(z.string().trim()).max(maxItineraryPhotos, "An itinerary day can have up to two photos.")]).optional(),
@@ -76,7 +77,7 @@ const trekSchema = z.object({
     altitude_gain: z.string().trim().max(60).optional().or(z.literal("")),
     altitude_loss: z.string().trim().max(60).optional().or(z.literal("")),
     meals: z.string().trim().max(120).optional().or(z.literal("")),
-  })).default([]),
+  })).refine((days) => new Set(days.map((day) => day.day_no)).size === days.length, "Itinerary day numbers must be unique.").default([]),
   faqs: z.array(z.object({
     question: z.string().trim().min(1),
     answer: z.string().trim().min(1),
@@ -190,8 +191,8 @@ export async function createTrek(raw: unknown): Promise<Result> {
   }
   if (t.itinerary.length) {
     jobs.push(admin.from("itinerary_days").insert(
-      t.itinerary.map((d, i) => ({
-        trek_id: trek.id, day_no: i, title: d.title, description: blank(d.description), image: saveItineraryPhotos(d.image),
+      t.itinerary.map((d) => ({
+        trek_id: trek.id, day_no: d.day_no, title: d.title, description: blank(d.description), image: saveItineraryPhotos(d.image),
         trek_distance: blank(d.trek_distance), trek_duration: blank(d.trek_duration),
         drive_distance: blank(d.drive_distance), drive_duration: blank(d.drive_duration),
         altitude_gain: blank(d.altitude_gain), altitude_loss: blank(d.altitude_loss), meals: blank(d.meals),
