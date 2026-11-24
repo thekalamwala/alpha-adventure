@@ -135,8 +135,7 @@ export const getTrekBySlug = cache(async (slug: string) => {
   return {
     ...trek,
     hero_slides: (heroSlides.data?.hero_slides ?? null) as string[] | null,
-    // Older itineraries were saved starting at Day 1. Keep their order and use the editor's numbering.
-    itinerary: (dayRows ?? []).map((day, index) => ({ ...day, day_no: index })),
+    itinerary: dayRows ?? [],
     inclusions: (inclusions.data ?? []).map((r) => r.text),
     exclusions: (exclusions.data ?? []).map((r) => r.text),
     packages: packages.data ?? [],

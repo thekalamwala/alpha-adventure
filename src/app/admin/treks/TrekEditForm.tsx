@@ -1,6 +1,7 @@
 "use client";
 
 import TrekAboutEditor from "./TrekAboutEditor";
+import ItineraryDayPicker from "@/app/admin/treks/ItineraryDayPicker";
 import ItineraryPhotoFields from "./ItineraryPhotoFields";
 import { readItineraryPhotos } from "@/lib/itineraryPhotos";
 import HighlightEditor from "./HighlightEditor";
@@ -27,6 +28,7 @@ type Pkg = { name: string; price: string; inclusions: string; cta_label: string 
 type Faq = { question: string; answer: string };
 type GalleryImg = { image_url: string; caption: string };
 type Day = {
+  day_no: number | null;
   title: string; description: string; image: string; secondImage: string;
   // Per-day metrics surfaced on the public detail page (migration 0027).
   trek_distance: string; trek_duration: string;
@@ -35,7 +37,7 @@ type Day = {
 };
 // A fresh itinerary day with every field blank.
 const blankDay = (): Day & { id: string } => ({
-  id: crypto.randomUUID(),
+  id: crypto.randomUUID(), day_no: null,
   title: "", description: "", image: "", secondImage: "",
   trek_distance: "", trek_duration: "", drive_distance: "", drive_duration: "",
   altitude_gain: "", altitude_loss: "", meals: "",
@@ -149,7 +151,7 @@ export default function TrekEditForm({ initial }: { initial: TrekEditInitial }) 
   const [boarding, setBoarding] = useState<BoardingRow[]>(initial.boarding);
   const [boardingDisclaimer, setBoardingDisclaimer] = useState(initial.boarding_disclaimer);
   const [deposit, setDeposit] = useState<DepositState>(initial.deposit);
-  const setDay = (id: string, key: keyof Day, value: string) =>
+  const setDay = (id: string, key: keyof Day, value: string | number | null) =>
     setItinerary((days) => days.map((day) => day.id === id ? { ...day, [key]: value } : day));
   const setFaq = (i: number, key: keyof Faq, v: string) =>
     setFaqs((prev) => prev.map((x, j) => (j === i ? { ...x, [key]: v } : x)));
@@ -159,8 +161,8 @@ export default function TrekEditForm({ initial }: { initial: TrekEditInitial }) 
   // ── Completion: which of the 6 essentials are filled (drives the ring). ──
   const essentials = useMemo(() => [
     !!f.title.trim(), !!f.summary.trim(), !!f.hero_image.trim(),
-    Number(f.price) > 0, !!f.difficulty, !!f.group,
-  ], [f.title, f.summary, f.hero_image, f.price, f.difficulty, f.group]);
+    Number(f.price) > 0, !!f.group,
+  ], [f.title, f.summary, f.hero_image, f.price, f.group]);
   const doneCount = essentials.filter(Boolean).length;
   const pct = Math.round((doneCount / essentials.length) * 100);
   const sectionDone: Record<string, boolean> = {
@@ -191,6 +193,10 @@ export default function TrekEditForm({ initial }: { initial: TrekEditInitial }) 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (uploadingPdf || itineraryUploads > 0) return;
+    if (itinerary.some((day) => day.title.trim() && !Number.isInteger(day.day_no))) {
+      setError("Choose a day number for each itinerary entry.");
+      return;
+    }
     setBusy(true);
     setError(null);
     const clean = (s: string) => s.split(/[\n,]/).map((x) => x.trim()).filter(Boolean);
@@ -198,7 +204,7 @@ export default function TrekEditForm({ initial }: { initial: TrekEditInitial }) 
     const payload = {
       title: f.title, summary: f.summary, overview: f.overview, hero_image: f.hero_image,
       hero_slides: heroSlideEdits?.map((slide) => slide.image.trim()).filter(Boolean),
-      base_price: f.price, difficulty: f.difficulty, status: f.status,
+      base_price: f.price, difficulty: f.difficulty || null, status: f.status,
       group: f.group, tags: clean(f.tags), badge: f.badge,
       region: f.region, location: f.location, state: f.state,
       duration_days: f.duration_days || undefined,
@@ -214,7 +220,7 @@ export default function TrekEditForm({ initial }: { initial: TrekEditInitial }) 
         name: p.name.trim(), price: p.price, inclusions: clean(p.inclusions), cta_label: p.cta_label.trim() || "Book Now",
       })),
       itinerary: itinerary.filter((d) => d.title.trim()).map((d) => ({
-        title: d.title.trim(), description: d.description, image: [d.image, d.secondImage],
+        day_no: d.day_no, title: d.title.trim(), description: d.description, image: [d.image, d.secondImage],
         trek_distance: d.trek_distance, trek_duration: d.trek_duration,
         drive_distance: d.drive_distance, drive_duration: d.drive_duration,
         altitude_gain: d.altitude_gain, altitude_loss: d.altitude_loss, meals: d.meals,
@@ -241,7 +247,7 @@ export default function TrekEditForm({ initial }: { initial: TrekEditInitial }) 
     }
   }
 
-  const activeDiff = DIFF.find((d) => d.v === f.difficulty) ?? DIFF[1];
+  const activeDiff = DIFF.find((d) => d.v === f.difficulty);
 
   return (
     <form onSubmit={submit}>
@@ -318,10 +324,10 @@ export default function TrekEditForm({ initial }: { initial: TrekEditInitial }) 
                 </Field>
               </div>
               <div>
-                <span className="mb-2 block text-xs font-semibold text-ink">Difficulty <span className="text-primary">*</span></span>
+                <span className="mb-2 block text-xs font-semibold text-ink">Difficulty</span>
                 <div className="flex flex-wrap gap-2" role="group" aria-label="Difficulty">
                   {DIFF.map((d) => (
-                    <button key={d.v} type="button" onClick={() => set("difficulty", d.v)} aria-pressed={f.difficulty === d.v}
+                    <button key={d.v} type="button" onClick={() => set("difficulty", f.difficulty === d.v ? "" : d.v)} aria-pressed={f.difficulty === d.v}
                       className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-semibold transition ${f.difficulty === d.v ? "border-primary bg-primary text-white" : "border-line bg-slate-50 text-gray-500 hover:border-gray-300"}`}>
                       <span className="h-1.5 w-1.5 rounded-full" style={{ background: f.difficulty === d.v ? "#fff" : d.dot }} />{d.label}
                     </button>
@@ -399,11 +405,11 @@ export default function TrekEditForm({ initial }: { initial: TrekEditInitial }) 
               <p className="-mt-1 text-[11.5px] text-gray-400">Day by day — shown on the public trek page.</p>
               {itinerary.map((d, i) => (
                 <div key={d.id} className="rounded-xl border border-line bg-slate-50/60 p-4">
-                  <div className="mb-3 flex items-center justify-between"><span className="text-xs font-bold text-ink">Day {i}</span>
+                  <div className="mb-3 flex items-center justify-between"><ItineraryDayPicker day={d} days={itinerary} onChange={(number) => setDay(d.id, "day_no", number)} />
                     <button type="button" onClick={() => setItinerary((days) => days.filter((day) => day.id !== d.id))} className="text-gray-400 transition hover:text-red-600"><Trash2 size={15} /></button></div>
                   <div className="space-y-3">
                     <Field label="Title"><input className={inp} value={d.title} onChange={(e) => setDay(d.id, "title", e.target.value)} placeholder="Base to summit" /></Field>
-                    <TrekAboutEditor label="Description" accessibleLabel={`Day ${i + 1} description`} value={d.description}
+                    <TrekAboutEditor label="Description" accessibleLabel={d.day_no === null ? `Itinerary entry ${i + 1} description` : `Day ${d.day_no} description`} value={d.description}
                       onChange={(description) => setDay(d.id, "description", description)} />
                     <ItineraryPhotoFields photo1={d.image} photo2={d.secondImage} onChange={(field, url) => setDay(d.id, field, url)}
                       onUploading={onItineraryUpload} inputClass={inp} />
@@ -501,9 +507,9 @@ export default function TrekEditForm({ initial }: { initial: TrekEditInitial }) 
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
                 {!f.hero_image && <div className="absolute inset-0 grid place-items-center text-xs text-gray-400">Hero image</div>}
                 {f.badge.trim() && <span className="absolute left-3 top-3 rounded-full bg-accent px-2.5 py-1 text-[10.5px] font-extrabold uppercase tracking-wide text-ink">{f.badge}</span>}
-                <span className="absolute right-3 top-3 flex items-center gap-1.5 rounded-full bg-black/60 px-2.5 py-1 text-[10.5px] font-semibold text-white backdrop-blur">
+                {activeDiff && <span className="absolute right-3 top-3 flex items-center gap-1.5 rounded-full bg-black/60 px-2.5 py-1 text-[10.5px] font-semibold text-white backdrop-blur">
                   <span className="h-1.5 w-1.5 rounded-full" style={{ background: activeDiff.dot }} />{activeDiff.label}
-                </span>
+                </span>}
                 <div className="absolute inset-x-3.5 bottom-3 text-white">
                   {f.location.trim() && <div className="mb-1 flex items-center gap-1 text-[11px] opacity-90"><MapPin size={11} />{f.location}</div>}
                   <h4 className="font-heading text-[19px] font-extrabold leading-tight text-white">{f.title.trim() || "Untitled trek"}</h4>
@@ -521,7 +527,7 @@ export default function TrekEditForm({ initial }: { initial: TrekEditInitial }) 
               </div>
             </div>
             <div className="grid grid-cols-2 rounded-xl border border-line bg-white p-1">
-              <div className="px-3 py-2"><div className="text-[10px] uppercase tracking-wide text-gray-400">Difficulty</div><div className="mt-0.5 font-mono text-[13px] font-semibold capitalize">{activeDiff.label}</div></div>
+              <div className="px-3 py-2"><div className="text-[10px] uppercase tracking-wide text-gray-400">Difficulty</div><div className="mt-0.5 font-mono text-[13px] font-semibold capitalize">{activeDiff?.label ?? "—"}</div></div>
               <div className="px-3 py-2"><div className="text-[10px] uppercase tracking-wide text-gray-400">Section</div><div className="mt-0.5 font-mono text-[13px] font-semibold capitalize">{f.group.replace("-", " ")}</div></div>
             </div>
             <p className="text-center text-[11px] leading-relaxed text-gray-400">Exactly how the trek appears on the public listing. Updates as you type.</p>
